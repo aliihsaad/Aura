@@ -42,7 +42,7 @@ export interface ModeRouterOptions {
 }
 
 export class ModeRouter {
-  private currentMode: AgentMode = 'interview'
+  private currentMode: AgentMode = 'companion'
   private activePipeline: Pipeline | null = null
   private starting: Promise<void> | null = null
 

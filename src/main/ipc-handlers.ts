@@ -1593,18 +1593,6 @@ export function setupIpcHandlers(): void {
   })
 
   configurePipelineFactory({
-    interview: () => ({
-      ...readPerSessionInputs(),
-      sessionRuntimeStore,
-      sessionRuntimeService,
-      audioCapture,
-      onAutoAnswerTrigger: () => {
-        // Interview pipeline only — workspace's transcript hook moves
-        // into WorkspacePipeline in phase 3.
-        void maybeGenerateAnswer()
-      },
-      ...buildSttRuntimeCallbacks(),
-    }),
     companion: () => ({
       ...readPerSessionInputs(),
       voiceEnabled: modeConfig.getCompanionModeConfig().voiceEnabled,

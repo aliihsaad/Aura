@@ -1,17 +1,17 @@
 /**
  * Public surface of the pipelines/ package.
  *
- * Two product modes: Interview + Companion. Workspace was removed
+ * One product mode: Companion (classic + realtime-beta engines).
+ * Interview mode was removed in the Aura fork; Workspace was removed
  * 2026-05-11 (see vault vm_UyUOIsvmCmZBz6AU).
  *
  * ipc-handlers (which owns the singleton dependencies) calls
- * `configurePipelineFactory()` at boot, passing builders for both modes.
+ * `configurePipelineFactory()` at boot, passing the companion builders.
  */
 
 import type { AgentMode } from '@shared/types'
 import { ModeRouter, type PipelineFactory } from './mode-router'
 import type { Pipeline } from './pipeline'
-import { InterviewPipeline, type InterviewPipelineDeps } from './interview-pipeline'
 import { CompanionPipeline, type CompanionPipelineDeps } from './companion-pipeline'
 import {
   CompanionRealtimePipeline,
@@ -26,7 +26,6 @@ export {
   type PipelineState,
   type PipelineStopReason,
 } from './pipeline'
-export { InterviewPipeline, type InterviewPipelineDeps } from './interview-pipeline'
 export { CompanionPipeline, type CompanionPipelineDeps } from './companion-pipeline'
 export {
   CompanionRealtimePipeline,
@@ -34,7 +33,6 @@ export {
 } from './companion-realtime-pipeline'
 
 export interface PipelineBuilders {
-  interview?: () => InterviewPipelineDeps
   /** Companion owns text + optional voice through its voiceEnabled config flag. */
   companion?: () => CompanionPipelineDeps
   companionEngine: () => 'classic' | 'realtime-beta'
@@ -44,9 +42,6 @@ export interface PipelineBuilders {
 let activeBuilders: Partial<PipelineBuilders> = {}
 
 const factory: PipelineFactory = (mode: AgentMode): Pipeline | null => {
-  if (mode === 'interview' && activeBuilders.interview) {
-    return new InterviewPipeline(activeBuilders.interview())
-  }
   if (mode === 'companion') {
     if (
       activeBuilders.companionEngine?.() === 'realtime-beta' &&

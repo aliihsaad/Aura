@@ -10,7 +10,7 @@
  * `voiceEnabled`. Voice mode adds a stop hook that
  * flushes the CompanionTtsService so audio playback halts on stop.
  *
- * As with InterviewPipeline (phase 1), the answer-flow callbacks
+ * The answer-flow callbacks
  * (transcript fanout, auto-answer trigger, answer streaming) are
  * passed in as deps; the heartbeat / bubble bodies still live in
  * ipc-handlers and are reached via the injected start/stop hooks.
