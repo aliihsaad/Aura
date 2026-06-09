@@ -32,7 +32,7 @@ interface WhisperRuntimePaths {
 
 export class WhisperCppSttService extends STTService {
   private connected = false
-  private readonly audioSource: TranscriptAudioSource
+  private readonly whisperAudioSource: TranscriptAudioSource
   private child: ChildProcessWithoutNullStreams | null = null
   private chunks: Buffer[] = []
   private segmentMs = 0
@@ -44,13 +44,13 @@ export class WhisperCppSttService extends STTService {
 
   constructor(
     private readonly modelPackStore: ModelPackStore,
-    private readonly speaker: 'interviewer' | 'user',
-    private readonly language: string = 'en',
+    private readonly whisperSpeaker: 'interviewer' | 'user',
+    private readonly whisperLanguage: string = 'en',
     _keyterms: string[] = [],
     private readonly runtimeOverride?: WhisperRuntimeOverride
   ) {
-    super('local-whisper', speaker, language, _keyterms)
-    this.audioSource = speaker === 'user' ? 'microphone' : 'system'
+    super('local-whisper', whisperSpeaker, whisperLanguage, _keyterms)
+    this.whisperAudioSource = this.whisperSpeaker === 'user' ? 'microphone' : 'system'
   }
 
   override async connect(): Promise<void> {
@@ -134,8 +134,8 @@ export class WhisperCppSttService extends STTService {
         const entry: TranscriptEntry = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           text,
-          speaker: this.speaker,
-          audioSource: this.audioSource,
+          speaker: this.whisperSpeaker,
+          audioSource: this.whisperAudioSource,
           timestamp: Date.now(),
           isFinal: true,
         }
@@ -179,7 +179,7 @@ export class WhisperCppSttService extends STTService {
         '-f',
         inputPath,
         '-l',
-        normalizeWhisperLanguage(this.language),
+        normalizeWhisperLanguage(this.whisperLanguage),
         '-nt',
         '-np',
         '-otxt',

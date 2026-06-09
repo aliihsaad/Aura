@@ -5,5 +5,5 @@
     "outDir": "dist/main",
     "declaration": true
   },
-  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*"]
+  "include": ["src/env.d.ts", "src/main/**/*", "src/preload/**/*", "src/shared/**/*"]
 }

@@ -53,12 +53,12 @@ export class MemoryPipelineService {
   ): EventRecord<TPayload> | undefined {
     try {
       const event = this.eventStore.createEvent(params)
-      this.eventStore.append(event)
+      this.eventStore.append(event as unknown as EventRecord<WhisphryEventPayload>)
 
       if (event.type === 'transcript.finalized') {
         this.persistExtractedMemories(
           this.extractionService.extractFromTranscriptEvent(
-            event as EventRecord<TranscriptFinalizedEventPayload>,
+            event as unknown as EventRecord<TranscriptFinalizedEventPayload>,
             sessionContext
           )
         )

@@ -73,14 +73,12 @@ import { AGENT_TOOL_CATALOG } from '@shared/agent-tool-catalog'
 import { selectModel, AnswerSource } from '@shared/model-selection'
 import {
   isExternalAudioEntry,
-  shouldSaveClassDigest,
   shouldAutoOpenAnswerWindowForExternalPrompt,
   shouldTreatExternalTranscriptAsPrompt,
 } from '@shared/session-intent-policy'
 import { checkForUpdates } from './services/update-checker'
 import { SUPPORTED_LANGUAGES } from '@shared/constants'
 import { SessionPersistenceService } from './services/session-persistence-service'
-import { ClassDigestService } from './services/class-digest-service'
 import { TerminalService } from './services/terminal-service'
 import { WebSearchService } from './services/web-search-service'
 import { ImageGenerationService } from './services/image-generation-service'
@@ -269,7 +267,6 @@ const memoryPipeline = new MemoryPipelineService(
 const screenCapture = new ScreenCaptureService()
 const screenshotAnalysisService = new ScreenshotAnalysisService(screenCapture, memoryPipeline)
 const sessionPersistenceService = new SessionPersistenceService(contextManager, memoryPipeline)
-const classDigestService = new ClassDigestService()
 const audioCapture = new AudioCaptureService()
 const sessionRuntimeService = new SessionRuntimeService()
 const sessionRuntimeStore = new SessionRuntimeStore()
@@ -589,7 +586,6 @@ let alwaysAllowWorkspaceWritesThisSession = false
 const pendingWorkspaceWriteApprovals = new Map<string, (approved: boolean) => void>()
 let answerTaskActive = false
 let activeAnswerTaskLabel = ''
-let pendingAutoAnswerAfterBusy = false
 let lastBusyNoticeAt = 0
 let realtimeCompanionBubbleId: string | null = null
 
@@ -1308,14 +1304,6 @@ function endAgentTask(): void {
   if (sessionRuntimeStore.isSessionActive && !sessionRuntimeStore.isSessionPaused) {
     heartbeatService.setPresenceState('listening')
   }
-  if (pendingAutoAnswerAfterBusy) {
-    pendingAutoAnswerAfterBusy = false
-    setTimeout(() => {
-      if (!isAgentTaskBusy() && sessionRuntimeStore.isSessionActive && !sessionRuntimeStore.isSessionPaused) {
-        void maybeGenerateAnswer()
-      }
-    }, 900)
-  }
 }
 
 function notifyAgentBusy(reason = 'I am still working on the current request. Please wait a moment.'): void {
@@ -1759,7 +1747,6 @@ export function setupIpcHandlers(): void {
     modeConfig.rememberLastSessionForMode(sessionCtx ?? contextManager.getSessionContext(), currentAgentMode())
     answerTaskActive = false
     activeAnswerTaskLabel = ''
-    pendingAutoAnswerAfterBusy = false
     sessionRuntimeStore.isSessionPaused = false
     if (preparedSessionStart.loadedFiles.length > 0) {
       console.log(`[FileContext] Loaded ${preparedSessionStart.loadedFiles.length} files: ${preparedSessionStart.loadedFiles.join(', ')}`)
@@ -1800,9 +1787,7 @@ export function setupIpcHandlers(): void {
         audioCapture,
         utteranceDebounceMs: UTTERANCE_DEBOUNCE_MS,
         onTranscript: handleTranscriptEntry,
-        onAutoAnswerTrigger: () => {
-          void maybeGenerateAnswer()
-        },
+        onAutoAnswerTrigger: () => {},
         shouldAutoTriggerFromMic: shouldAutoAnswerFromMic(),
         onAudioChunk: (source, chunk) => {
           const suppressInterviewerCapture =
@@ -1911,7 +1896,6 @@ export function setupIpcHandlers(): void {
 
     answerTaskActive = false
     activeAnswerTaskLabel = ''
-    pendingAutoAnswerAfterBusy = false
 
     if (usingPipeline) {
       await router.stopSession('user-stop')
@@ -2007,7 +1991,6 @@ export function setupIpcHandlers(): void {
     }
 
     sessionRuntimeStore.isSessionPaused = true
-    pendingAutoAnswerAfterBusy = false
     sessionRuntimeService.clearPendingGeneration()
     audioCapture.stopCapture()
     heartbeatService.stop()
@@ -2708,9 +2691,7 @@ export function setupIpcHandlers(): void {
             sessionRuntimeStore.sttService,
             handleTranscriptEntry,
             UTTERANCE_DEBOUNCE_MS,
-            () => {
-              void maybeGenerateAnswer()
-            }
+            () => {}
           )
           await sessionRuntimeStore.sttService.connect()
         }
@@ -2720,12 +2701,8 @@ export function setupIpcHandlers(): void {
           sessionRuntimeService.attachMicSttService(
             sessionRuntimeStore.micSttService,
             handleTranscriptEntry,
-            shouldAutoAnswerFromMic() ? UTTERANCE_DEBOUNCE_MS : undefined,
-            shouldAutoAnswerFromMic()
-              ? () => {
-                  void maybeGenerateAnswer()
-                }
-              : undefined
+            undefined,
+            undefined
           )
           await sessionRuntimeStore.micSttService.connect()
         }
@@ -2743,9 +2720,7 @@ export function setupIpcHandlers(): void {
               sessionRuntimeStore.sttService,
               handleTranscriptEntry,
               UTTERANCE_DEBOUNCE_MS,
-              () => {
-                void maybeGenerateAnswer()
-              }
+              () => {}
             )
             await sessionRuntimeStore.sttService.connect()
           }
@@ -2754,12 +2729,8 @@ export function setupIpcHandlers(): void {
             sessionRuntimeService.attachMicSttService(
               sessionRuntimeStore.micSttService,
               handleTranscriptEntry,
-              shouldAutoAnswerFromMic() ? UTTERANCE_DEBOUNCE_MS : undefined,
-              shouldAutoAnswerFromMic()
-                ? () => {
-                    void maybeGenerateAnswer()
-                  }
-                : undefined
+              undefined,
+              undefined
             )
             await sessionRuntimeStore.micSttService.connect()
           }
@@ -2782,12 +2753,8 @@ export function setupIpcHandlers(): void {
             sessionRuntimeService.attachMicSttService(
               sessionRuntimeStore.micSttService,
               handleTranscriptEntry,
-              shouldAutoAnswerFromMic() ? UTTERANCE_DEBOUNCE_MS : undefined,
-              shouldAutoAnswerFromMic()
-                ? () => {
-                    void maybeGenerateAnswer()
-                  }
-                : undefined
+              undefined,
+              undefined
             )
             await sessionRuntimeStore.micSttService.connect()
           }
@@ -3201,50 +3168,6 @@ async function generateAnswer(request: LLMRequest, source: AnswerSource = 'trans
 
 function shouldUseScreenOnlyAnswer(question: string): boolean {
   return isExplicitScreenInspectionQuestion(question)
-}
-
-async function maybeGenerateAnswer(): Promise<void> {
-  if (sessionRuntimeStore.isSessionPaused) return
-  if (!getAutoAnswerEnabled()) return
-  if (isAgentTaskBusy()) {
-    pendingAutoAnswerAfterBusy = true
-    notifyAgentBusy('I am still working, so I will wait before handling the latest speech.')
-    return
-  }
-
-  // Cooldown: don't fire another auto-answer too soon after the last one finished
-  const timeSinceLastAnswer = Date.now() - sessionRuntimeStore.lastAnswerCompletedAt
-  if (sessionRuntimeStore.lastAnswerCompletedAt > 0 && timeSinceLastAnswer < ANSWER_COOLDOWN_MS) {
-    return
-  }
-
-  const prepared = await answerRequestService.buildAutoAnswerRequest({
-    llmService: sessionRuntimeStore.llmService,
-    sessionTranscript: sessionRuntimeStore.sessionTranscript,
-    answerHistory: sessionRuntimeStore.currentSessionAnswers,
-    userContext: contextManager.getContext(),
-    sessionContext: contextManager.getSessionContext(),
-    interviewType: sessionRuntimeStore.currentSessionInterviewType,
-    fileContext: sessionRuntimeStore.currentFileContext,
-    answerLanguage: getAnswerLanguage(),
-    baseRecallContext: sessionRuntimeStore.currentSessionRecallContext,
-    sessionFolderName: sessionRuntimeStore.currentSessionFolderName || undefined,
-    noiseTokens: RECALL_QUERY_NOISE_TOKENS,
-    lastGeneratedPromptTranscriptCount: sessionRuntimeStore.lastGeneratedPromptTranscriptCount,
-  })
-  if (!prepared) return
-  if (prepared.normalizedQuestion === sessionRuntimeStore.lastGeneratedQuestion) return
-
-  sessionRuntimeStore.lastAnswerRecallQuestion = prepared.preparedQuestion
-  sessionRuntimeStore.lastAnswerRecallContext = prepared.recallContext
-  sessionRuntimeStore.lastRuntimeRecallUpdatedAt = prepared.recallContext ? Date.now() : sessionRuntimeStore.lastRuntimeRecallUpdatedAt
-  sessionRuntimeStore.lastGeneratedQuestion = prepared.normalizedQuestion
-  sessionRuntimeStore.lastGeneratedPromptTranscriptCount = prepared.promptTranscriptCount
-  if (shouldUseScreenOnlyAnswer(prepared.preparedQuestion)) {
-    await runCurrentScreenAnswer(prepared.preparedQuestion)
-    return
-  }
-  await generateAnswer(prepared.request)
 }
 
 async function runManualAnswer(question: string): Promise<boolean> {
@@ -4250,24 +4173,12 @@ function saveCurrentSession(studyNotes?: StudyNotesSnapshot | null): void {
   }
 
   try {
-    const shouldBuildDigest = shouldSaveClassDigest(sessionContext.sessionIntent)
-    const classDigest = shouldBuildDigest
-      ? classDigestService.buildDigest({
-          transcript: sessionRuntimeStore.sessionTranscript,
-          answers: sessionRuntimeStore.currentSessionAnswers,
-          meetingNotes: sessionRuntimeStore.currentSessionNotes,
-          sessionContext,
-        })
-      : undefined
-
     sessionPersistenceService.saveSession({
       startedAt: sessionRuntimeStore.currentSessionStartTime,
       transcript: sessionRuntimeStore.sessionTranscript,
       answers: sessionRuntimeStore.currentSessionAnswers,
       meetingNotes: sessionRuntimeStore.currentSessionNotes,
       sessionReport: sessionRuntimeStore.currentSessionReport,
-      studyNotes,
-      classDigest,
       screenshots: sessionRuntimeStore.currentSessionScreenshots,
       profile: contextManager.getProfile(),
       context: contextManager.getContext(),

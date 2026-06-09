@@ -13,7 +13,7 @@ export interface LocalAiModelPackFile {
   bytes?: number
   sha256?: string
   sha1?: string
-  platforms?: NodeJS.Platform[]
+  platforms?: readonly NodeJS.Platform[]
   extract?: {
     type: 'zip'
     to: string
@@ -23,7 +23,7 @@ export interface LocalAiModelPackFile {
 export interface LocalAiModelPackDownloadSource {
   source: string
   license: string
-  files: LocalAiModelPackFile[]
+  files: readonly LocalAiModelPackFile[]
 }
 
 export const LOCAL_AI_MODEL_PACKS = {
