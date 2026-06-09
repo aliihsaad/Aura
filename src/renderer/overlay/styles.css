@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* Custom scrollbar — thin, subtle */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Drag regions for frameless window */
+.drag-handle {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Smooth text streaming animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stream-text {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Subtle slide-in for panels */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.slide-in {
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes teleprompterLineEnter {
+  from { opacity: 0; transform: translateY(42px) scale(0.985); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes teleprompterFlipUp {
+  from { opacity: 1; transform: translateY(0) rotateX(0deg) scale(1); filter: blur(0); }
+  to { opacity: 0; transform: translateY(-86px) rotateX(24deg) scale(0.96); filter: blur(8px); }
+}
+
+.teleprompter-current-line {
+  max-width: min(1120px, 96vw);
+  font-size: 64px;
+  font-weight: 780;
+  line-height: 1.08;
+  letter-spacing: 0;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow: 0 18px 54px rgba(0, 0, 0, 0.78);
+  transform-origin: 50% 0%;
+}
+
+.teleprompter-line-enter {
+  animation: teleprompterLineEnter 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.teleprompter-flip-up {
+  animation: teleprompterFlipUp 280ms cubic-bezier(0.55, 0, 0.35, 1) both;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+.overlay-shell {
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.answer-panel {
+  min-width: min(100%, 740px);
+}
+
+/* Custom range slider styling for settings */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22d3ee;
+  cursor: pointer;
+  border: 2px solid rgba(10, 12, 16, 0.9);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+}
+
+/* Agent voice wave — three bars that pulse at slightly different rates so
+   they don't sync. Background colour matches the existing cyan accent. */
+.voice-wave-bar {
+  display: block;
+  width: 2px;
+  border-radius: 1px;
+  background: #22d3ee;
+  box-shadow: 0 0 4px rgba(34, 211, 238, 0.5);
+  transform-origin: center;
+  animation: voice-wave 0.7s ease-in-out infinite alternate;
+}
+.voice-wave-bar-1 { height: 4px; animation-duration: 0.62s; }
+.voice-wave-bar-2 { height: 8px; animation-duration: 0.78s; }
+.voice-wave-bar-3 { height: 5px; animation-duration: 0.71s; }
+
+@keyframes voice-wave {
+  from { transform: scaleY(0.45); opacity: 0.55; }
+  to   { transform: scaleY(1.15); opacity: 1; }
+}
