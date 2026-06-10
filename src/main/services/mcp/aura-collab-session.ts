@@ -99,10 +99,11 @@ export class AuraCollabSession {
     }
   }
 
-  /** One non-blocking attention drain. Returns a renderer-safe summary. */
-  async drain(): Promise<{ drained: boolean; itemCount: number }> {
+  /** One non-blocking attention drain. Returns a renderer-safe summary —
+   * item kinds and short labels only, never tokens or raw payloads. */
+  async drain(): Promise<{ drained: boolean; itemCount: number; items: string[] }> {
     if (!this.sessionUid || !this.sessionToken) {
-      return { drained: false, itemCount: 0 }
+      return { drained: false, itemCount: 0, items: [] }
     }
     const raw = await this.deps.manager.callTool('vault_collab', 'vault_collab_receive', {
       sessionUid: this.sessionUid,
@@ -111,9 +112,10 @@ export class AuraCollabSession {
       includeCurrentHandoffs: false,
     })
     const result = parseResultObject(raw)
-    const itemCount = Array.isArray(result?.items) ? result.items.length : 0
-    console.log(`[VaultCollab] attention drained: ${itemCount} item(s).`)
-    return { drained: true, itemCount }
+    const rawItems: any[] = Array.isArray(result?.items) ? result.items : []
+    const items = rawItems.slice(0, 20).map((item) => describeAttentionItem(item))
+    console.log(`[VaultCollab] attention drained: ${rawItems.length} item(s).`)
+    return { drained: true, itemCount: rawItems.length, items }
   }
 
   /** Disconnect cleanly (app quit or settings toggle off). */
@@ -165,6 +167,21 @@ export class AuraCollabSession {
       console.warn('[VaultCollab] heartbeat failed:', err instanceof Error ? err.message : err)
     }
   }
+}
+
+/** One-line, token-free description of an attention item for the agent. */
+function describeAttentionItem(item: any): string {
+  const kind = String(item?.kind ?? 'event')
+  const handoff = item?.handoff
+  if (handoff) {
+    const title = String(handoff.title ?? handoff.shortPrompt ?? '').slice(0, 120)
+    return `${kind}: ${handoff.handoffUid ?? ''} [${handoff.status ?? ''}] ${title}`.trim()
+  }
+  const event = item?.event
+  if (event) {
+    return `${kind}: ${event.eventType ?? 'event'} (${event.createdAt ?? ''})`
+  }
+  return kind
 }
 
 /** Server tools return `{"result": {...}}` as a JSON text block. */

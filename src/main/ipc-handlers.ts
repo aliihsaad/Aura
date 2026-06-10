@@ -142,7 +142,7 @@ import {
 import { SessionBrainService } from './services/agent/session-brain-service'
 import { McpClientManager, resolveVaultServerConfigs } from './services/mcp/mcp-client-manager'
 import { AuraCollabSession } from './services/mcp/aura-collab-session'
-import { buildVaultRecallContext, saveVaultSessionMemory } from './services/mcp/vault-session-memory'
+import { buildVaultRecallContext, saveVaultSessionMemory, DEFAULT_VAULT_MEMORY_PROJECT } from './services/mcp/vault-session-memory'
 import { AgentEngine, AgentMode, PersonalityPreset, InterruptionPolicy } from '@shared/types'
 import { KernelChannels, ModeChannels } from '@shared/ipc-channels'
 import ElectronStore from 'electron-store'
@@ -197,17 +197,53 @@ function getVaultDisabledTools(): string[] {
   return Array.isArray(raw) ? raw.map(String) : []
 }
 
+/** Vault project for Aura's own session memories (identity/companion side).
+ * Engineering memories live in 'aura-desktop-build'. */
+function getVaultMemoryProject(): string {
+  const configured = String(configStore.get('vaultMemoryProject', '') || '').trim()
+  return configured || DEFAULT_VAULT_MEMORY_PROJECT
+}
+
+// Synthetic agent tool: drains Aura's OWN collab attention feed through the
+// presence session (which holds the private token) — not a server tool.
+const CHECK_ATTENTION_TOOL = 'vault_collab_check_attention'
+
+function getCheckAttentionToolDefinition(): ToolDefinition | null {
+  if (!auraCollabSession.getStatus().connected) return null
+  return {
+    type: 'function',
+    function: {
+      name: CHECK_ATTENTION_TOOL,
+      description:
+        "Check Aura's own attention feed on the agent coordination layer: pings, handoff notices, and events addressed to this Aura session. Use when the user asks whether anything needs attention or what the other agents have sent.",
+      parameters: { type: 'object', properties: {} },
+    },
+  }
+}
+
 /** Bridged Vault tool definitions minus the ones toggled off in Settings. */
 function getEnabledVaultToolDefinitions(): ToolDefinition[] {
   const disabled = new Set(getVaultDisabledTools())
-  return vaultMcpManager
-    .getBridgedToolDefinitions()
-    .filter((def) => !disabled.has(def.function.name))
+  const checkAttention = getCheckAttentionToolDefinition()
+  return [
+    ...vaultMcpManager.getBridgedToolDefinitions(),
+    ...(checkAttention ? [checkAttention] : []),
+  ].filter((def) => !disabled.has(def.function.name))
 }
 
 async function callVaultToolGuarded(name: string, args: Record<string, any>): Promise<string> {
   if (getVaultDisabledTools().includes(name)) {
     return `Tool "${name}" is disabled in Settings → Memory & Sync.`
+  }
+  if (name === CHECK_ATTENTION_TOOL) {
+    try {
+      const result = await auraCollabSession.drain()
+      if (!result.drained) return 'Not registered on the coordination layer right now.'
+      if (result.itemCount === 0) return 'Attention feed is clear — nothing new for this session.'
+      return [`${result.itemCount} attention item(s):`, ...result.items].join('\n')
+    } catch (err) {
+      return `Attention check failed: ${err instanceof Error ? err.message : String(err)}`
+    }
   }
   return vaultMcpManager.callBridgedTool(name, args)
 }
@@ -701,12 +737,18 @@ function buildVaultToolGuidance(): string {
   if ([...names].some((name) => name.startsWith('vault_memory_'))) {
     lines.push(
       'vault_memory_* tools talk to The Vault — the user\'s durable cross-session memory shared with their other AI agents.',
-      'Use vault_memory_recall_context or vault_memory_find_memory when the user asks about past sessions, projects, decisions, or anything from "the vault". Use vault_memory_save_memory when they explicitly want something kept long-term (distinct from save_memory, which is Aura-local). vault_memory_get_project_briefing gives a project status overview.'
+      'Use vault_memory_recall_context or vault_memory_find_memory when the user asks about past sessions, projects, decisions, or anything from "the vault". Use vault_memory_save_memory when they explicitly want something kept long-term (distinct from save_memory, which is Aura-local). vault_memory_get_project_briefing gives a project status overview.',
+      'IMPORTANT: search, recall, and graph tools return item summaries and UIDs (vm_...) — NOT full documents. To read the actual content of a memory, ALWAYS follow up with vault_memory_get_memory_detail using the item UID. Chain it without asking: find → detail → answer.'
+    )
+  }
+  if ([...names].some((name) => name.startsWith('vault_memory_graphify'))) {
+    lines.push(
+      'vault_memory_graphify_* tools query the knowledge graph built over Vault memory: graphify_query for graph searches, get_node/get_neighbors to walk relations, shortest_path to connect two items, explain_impact for change-impact questions. vault_memory_recall_with_graph_context is recall enriched with graph relations. Graph results carry node/item UIDs — fetch their content with vault_memory_get_memory_detail.'
     )
   }
   if ([...names].some((name) => name.startsWith('vault_collab_'))) {
     lines.push(
-      'vault_collab_* tools are a read-only window into the user\'s agent coordination layer. Use vault_collab_list_sessions ("which agents are active?"), vault_collab_list_inbox ("any open handoffs?"), and the discussion/event readers when asked. You can only observe — never claim or modify coordination state.'
+      'vault_collab_* tools are a read-only window into the user\'s agent coordination layer. Use vault_collab_list_sessions ("which agents are active?"), vault_collab_list_inbox ("any open handoffs?"), and the discussion/event readers when asked. vault_collab_check_attention reads YOUR own attention feed (pings and notices addressed to Aura). You can only observe — never claim or modify coordination state.'
     )
   }
   return lines.join('\n')
@@ -1896,7 +1938,8 @@ export function setupIpcHandlers(): void {
     // first tick. One call per session; '' when vault-memory is offline.
     sessionRuntimeStore.vaultRecallContext = await buildVaultRecallContext(
       vaultMcpManager,
-      sessionCtx ?? contextManager.getSessionContext()
+      sessionCtx ?? contextManager.getSessionContext(),
+      getVaultMemoryProject()
     )
 
     const brainEnabled = configStore.get('brainEnabled', DEFAULT_BRAIN_CONFIG.brainEnabled) as boolean
@@ -2023,6 +2066,7 @@ export function setupIpcHandlers(): void {
       startedAt: sessionRuntimeStore.currentSessionStartTime,
       endedAt: preparedSessionStop.stoppedAt,
       transcript: [...sessionRuntimeStore.sessionTranscript],
+      project: getVaultMemoryProject(),
     })
 
     const sessionStopTelemetryCounts = {
@@ -2571,7 +2615,7 @@ export function setupIpcHandlers(): void {
     try {
       const result = await vaultMcpManager.callTool('vault_memory', 'vault_save_memory', {
         title: title || `Aura note (${new Date().toISOString().slice(0, 10)})`,
-        project: 'aura-desktop',
+        project: getVaultMemoryProject(),
         memory_type: 'reference',
         subject: String(payload?.subject ?? '').trim() || title || 'Aura note',
         summary: String(payload?.summary ?? '').trim() || content.slice(0, 300) || title,
@@ -2672,6 +2716,7 @@ export function setupIpcHandlers(): void {
       vaultMemoryEnabled: configStore.get('vaultMemoryEnabled', true) as boolean,
       vaultCollabEnabled: configStore.get('vaultCollabEnabled', true) as boolean,
       vaultDisabledTools: getVaultDisabledTools(),
+      vaultMemoryProject: getVaultMemoryProject(),
     }
   })
 
@@ -2695,7 +2740,7 @@ export function setupIpcHandlers(): void {
       'activeMode',
       'brainEnabled', 'brainModel', 'brainVisionModel', 'brainScreenshotIntervalMs',
       'localAi',
-      'vaultMemoryEnabled', 'vaultCollabEnabled', 'vaultDisabledTools',
+      'vaultMemoryEnabled', 'vaultCollabEnabled', 'vaultDisabledTools', 'vaultMemoryProject',
     ])
     for (const [key, value] of Object.entries(config)) {
       if (!ALLOWED_CONFIG_KEYS.has(key)) continue

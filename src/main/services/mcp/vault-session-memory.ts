@@ -9,14 +9,18 @@ import type { McpClientManager } from './mcp-client-manager'
  * heartbeat/realtime hot paths never wait on Vault.
  */
 
-const VAULT_PROJECT = 'aura-desktop'
+/** Fallback when no project is configured. 'Aura-Brain' is the Vault
+ * project that holds Aura's identity and companion session memories
+ * (the engineering project is 'aura-desktop-build'). */
+export const DEFAULT_VAULT_MEMORY_PROJECT = 'Aura-Brain'
 const RECALL_TIMEOUT_MS = 15_000
 const RECALL_LIMIT = 6
 const RECALL_MAX_CHARS = 4_000
 
 export async function buildVaultRecallContext(
   manager: McpClientManager,
-  sessionContext: SessionContext
+  sessionContext: SessionContext,
+  project: string = DEFAULT_VAULT_MEMORY_PROJECT
 ): Promise<string> {
   if (!manager.isConnected('vault_memory')) return ''
 
@@ -26,7 +30,7 @@ export async function buildVaultRecallContext(
       'vault_memory',
       'vault_recall_context',
       {
-        project: VAULT_PROJECT,
+        project,
         query_text: topic || 'recent context for a new companion session',
         limit: RECALL_LIMIT,
       },
@@ -51,6 +55,7 @@ export interface VaultSessionSavePayload {
   startedAt: number | null
   endedAt: number
   transcript: TranscriptEntry[]
+  project?: string
 }
 
 /** Fire-and-forget save of the finished session. Never throws. */
@@ -78,7 +83,7 @@ export async function saveVaultSessionMemory(
   try {
     await manager.callTool('vault_memory', 'vault_save_memory', {
       title: `Aura session — ${subject} (${dateLabel})`,
-      project: VAULT_PROJECT,
+      project: payload.project || DEFAULT_VAULT_MEMORY_PROJECT,
       // The vault-memory schema has no 'conversation' type; 'session' is its
       // canonical equivalent for a finished interactive session.
       memory_type: 'session',

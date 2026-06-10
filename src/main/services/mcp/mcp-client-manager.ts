@@ -79,6 +79,16 @@ const BRIDGED_TOOL_ALLOWLIST: Record<VaultNamespace, Set<string>> = {
     'vault_suggest_save_path',
     'vault_count_open_loops',
     'vault_list_open_loops',
+    // Graphify — read-only knowledge-graph queries over Vault memory
+    // (enhancement plan vm_IZ--C-8I_NADEgMl). build_project_graph stays
+    // excluded: it's a heavy mutation, not a query.
+    'vault_recall_with_graph_context',
+    'vault_graphify_query',
+    'vault_graphify_status',
+    'vault_graphify_get_node',
+    'vault_graphify_get_neighbors',
+    'vault_graphify_shortest_path',
+    'vault_graphify_explain_impact',
   ]),
   vault_collab: new Set([
     'vault_collab_list_sessions',
