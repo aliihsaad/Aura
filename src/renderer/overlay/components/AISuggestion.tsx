@@ -8,7 +8,6 @@ import {
   HelpCircle,
   GripVertical,
   Minus,
-  Play,
   Plus,
   ShieldAlert,
   Square,
@@ -51,7 +50,6 @@ interface AISuggestionProps {
   historyLabel?: string
   onGoBack?: () => void
   onGoForward?: () => void
-  onOpenTeleprompter?: () => void
   detailCapabilities: string[]
   onClear: () => void
   onClose: () => void
@@ -69,7 +67,6 @@ export default function AISuggestion({
   historyLabel,
   onGoBack,
   onGoForward,
-  onOpenTeleprompter,
   detailCapabilities,
   onClear,
   onClose,
@@ -309,16 +306,6 @@ export default function AISuggestion({
                 )}
               </div>
             )}
-            {hasCapability('teleprompter') && onOpenTeleprompter && (
-              <button
-                onClick={onOpenTeleprompter}
-                disabled={!visibleAnswer.trim()}
-                className="rounded-lg p-2 bg-cyan-500/[0.08] text-cyan-300/65 transition-colors hover:bg-cyan-500/[0.14] hover:text-cyan-200 disabled:opacity-25"
-                title="Open teleprompter"
-              >
-                <Play size={15} />
-              </button>
-            )}
             {/* Font size controls */}
             <div className="flex items-center gap-0.5 rounded-lg bg-white/[0.04] px-1">
               <button
@@ -368,7 +355,7 @@ export default function AISuggestion({
           </div>
           <div className="font-semibold leading-relaxed text-white/85" style={{ fontSize: `${fontSize}px` }}>
             {question || (
-              <span className="text-white/25">Waiting for interview question...</span>
+              <span className="text-white/25">Waiting for your next question...</span>
             )}
           </div>
         </div>

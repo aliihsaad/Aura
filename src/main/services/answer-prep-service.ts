@@ -194,7 +194,7 @@ function cleanTranscriptQuestion(question: string): string {
 function finalizeNormalizedQuestion(rewritten: string, fallback: string): string {
   const candidate = rewritten
     .replace(/^["'\s]+|["'\s]+$/g, '')
-    .replace(/^(question|interviewer question|prompt|request)\s*:\s*/i, '')
+    .replace(/^(question|speaker question|prompt|request)\s*:\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim()
 

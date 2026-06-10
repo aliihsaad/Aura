@@ -33,8 +33,6 @@ export default function ApiConfig() {
   const [interruptionPolicy, setInterruptionPolicy] = useState<'silent' | 'ask-first' | 'proactive' | 'auto'>('ask-first')
   const [heartbeatIntervalMs, setHeartbeatIntervalMs] = useState(15000)
   const [heartbeatEnabled, setHeartbeatEnabled] = useState(true)
-  const [agentMode, setAgentMode] = useState<'interview' | 'companion'>('interview')
-  const [interviewHeartbeatEnabled, setInterviewHeartbeatEnabled] = useState(true)
   const [brainEnabled, setBrainEnabled] = useState(true)
   const [brainModel, setBrainModel] = useState('google/gemini-3-flash-preview')
   const [brainVisionModel, setBrainVisionModel] = useState('google/gemini-3-flash-preview')
@@ -102,11 +100,6 @@ export default function ApiConfig() {
       setInterruptionPolicy((config.interruptionPolicy ?? 'ask-first') as typeof interruptionPolicy)
       setHeartbeatIntervalMs(config.heartbeatIntervalMs ?? 15000)
       setHeartbeatEnabled(config.heartbeatEnabled ?? true)
-      const savedMode = config.agentMode === 'companion' || config.liveAgentEnabled
-        ? 'companion'
-        : 'interview'
-      setAgentMode(savedMode)
-      setInterviewHeartbeatEnabled(config.interviewHeartbeatEnabled ?? true)
       setBrainEnabled(config.brainEnabled ?? true)
       setBrainModel(config.brainModel || 'google/gemini-3-flash-preview')
       setBrainVisionModel(config.brainVisionModel || 'google/gemini-3-flash-preview')
@@ -132,10 +125,9 @@ export default function ApiConfig() {
       interruptionPolicy,
       heartbeatIntervalMs,
       heartbeatEnabled,
-      agentMode,
-      interviewHeartbeatEnabled,
+      agentMode: 'companion',
       // Keep legacy flags in sync so existing code paths see consistent state:
-      liveAgentEnabled: agentMode === 'companion',
+      liveAgentEnabled: true,
       companionVoiceModel,
       companionEngine,
       companionRealtimeModel,
@@ -485,7 +477,7 @@ export default function ApiConfig() {
                 })}
               </div>
               <p className="text-[10.5px] text-white/25 mt-2.5">
-                Used for: screen analysis, coding interviews, and coding-related questions
+                Used for: screen analysis and coding-related questions
               </p>
             </div>
           )}
@@ -595,49 +587,6 @@ export default function ApiConfig() {
         </div>
 
         <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
-          {/* Proactive nudges (interview mode only) */}
-          {agentMode === 'interview' && (
-            <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[12.5px] text-white/60">Proactive nudges</div>
-                  <div className="text-[11px] text-white/30 mt-0.5">
-                    When off, Whisphry only speaks in response to a question or comment in the transcript. When on, it may also chime in with reminders or observations.
-                  </div>
-                </div>
-                <button
-                  onClick={() => setInterviewHeartbeatEnabled(!interviewHeartbeatEnabled)}
-                  className="text-white/60 hover:text-white/80 transition-colors"
-                >
-                  {interviewHeartbeatEnabled ? (
-                    <ToggleRight size={28} className="text-cyan-400" />
-                  ) : (
-                    <ToggleLeft size={28} />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-white/4 pt-4">
-                <div>
-                  <div className="text-[12.5px] text-white/60">Run heartbeat timer</div>
-                  <div className="text-[11px] text-white/30 mt-0.5">
-                    Advanced. Disable to stop interval polling entirely. Transcript-triggered answers still work.
-                  </div>
-                </div>
-                <button
-                  onClick={() => setHeartbeatEnabled(!heartbeatEnabled)}
-                  className="text-white/60 hover:text-white/80 transition-colors"
-                >
-                  {heartbeatEnabled ? (
-                    <ToggleRight size={28} className="text-cyan-400" />
-                  ) : (
-                    <ToggleLeft size={28} />
-                  )}
-                </button>
-              </div>
-            </>
-          )}
-
           {/* Personality */}
           <div className="border-t border-white/4 pt-5">
             <label className="block text-[11.5px] font-medium text-white/40 mb-2 uppercase tracking-wider">
@@ -747,44 +696,14 @@ export default function ApiConfig() {
         </div>
 
         <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-4">
-          <div className="space-y-2">
-            <div className="grid grid-cols-1 gap-2">
-              {[
-                {
-                  value: 'interview' as const,
-                  title: 'Interview / Meeting',
-                  body: 'OpenRouter answers your live transcript. Best for video calls, classes, and interviews where reliability and answer quality matter more than sub-second latency.',
-                },
-                {
-                  value: 'companion' as const,
-                  title: 'Companion',
-                  body: 'OpenRouter replies as short companion bubbles and can speak them when voice is enabled from the overlay.',
-                },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setAgentMode(opt.value)}
-                  className={`text-left rounded-xl px-3 py-2.5 border transition-colors ${
-                    agentMode === opt.value
-                      ? 'border-cyan-500/40 bg-cyan-500/5'
-                      : 'border-white/6 bg-white/2 hover:border-white/12'
-                  }`}
-                >
-                  <div className="text-[13px] text-white/85 font-medium">{opt.title}</div>
-                  <div className="text-[11.5px] text-white/45 mt-0.5">{opt.body}</div>
-                </button>
-              ))}
+          {!openrouterKey && (
+            <div className="text-[11.5px] text-amber-300/80 px-1">
+              Set an OpenRouter API key above to use Companion mode.
             </div>
-            {agentMode !== 'interview' && !openrouterKey && (
-              <div className="text-[11.5px] text-amber-300/80 px-1">
-                Set an OpenRouter API key above to use Companion mode.
-              </div>
-            )}
-          </div>
+          )}
 
-          {agentMode === 'companion' && (
-            <div className="border-t border-white/4 pt-4 space-y-4">
+          {(
+            <div className="space-y-4">
               <div>
                 <label className="text-[12.5px] text-white/50 block mb-2">Companion engine</label>
                 <select

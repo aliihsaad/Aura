@@ -2,7 +2,7 @@
  * ModeRouter — single owner of "which pipeline is active right now".
  *
  * Phase 0: the router is constructed and exported, but no pipeline is
- * registered yet. ipc-handlers continues to drive interview/companion/
+ * registered yet. ipc-handlers continues to drive session/companion/
  * workspace logic directly. Later phases register pipelines and migrate
  * call sites onto `router.dispatch*`.
  *

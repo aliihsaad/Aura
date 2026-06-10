@@ -2,7 +2,7 @@ import { rms } from './energy'
 import { getRenderReferenceBus, RenderReferenceBus } from './render-reference-bus'
 
 // Tunables. Starting values — expect to adjust once we A/B against real
-// interview audio.
+// captured system audio.
 
 // Raw mic RMS below this is silence or room noise. Skip detection.
 const MIC_FLOOR = 0.01

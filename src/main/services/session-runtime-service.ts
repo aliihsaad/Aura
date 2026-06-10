@@ -4,7 +4,7 @@ import { LLMService } from './llm-service'
 import { STTService } from './stt-service'
 
 interface BindSessionRuntimeOptions {
-  interviewerSttService: STTService
+  systemSttService: STTService
   micSttService: STTService | null
   llmService: LLMService
   audioCapture: AudioCaptureService
@@ -12,7 +12,7 @@ interface BindSessionRuntimeOptions {
   onTranscript: (entry: TranscriptEntry) => void
   onAutoAnswerTrigger: () => void
   shouldAutoTriggerFromMic?: boolean
-  onAudioChunk: (source: 'interviewer' | 'user', chunk: Buffer) => void
+  onAudioChunk: (source: 'system' | 'user', chunk: Buffer) => void
   onAnswerChunk: (fullAnswer: string) => void
   onAnswerDone: (answer: string) => void
   onAnswerError: (error: Error) => void
@@ -22,13 +22,13 @@ export class SessionRuntimeService {
   private pendingGenerationTimer: NodeJS.Timeout | null = null
 
   bindSessionRuntime(options: BindSessionRuntimeOptions): void {
-    options.interviewerSttService.removeAllListeners()
+    options.systemSttService.removeAllListeners()
     options.micSttService?.removeAllListeners()
     options.audioCapture.removeAllListeners('audio-data')
     options.llmService.removeAllListeners()
 
-    this.attachInterviewerSttService(
-      options.interviewerSttService,
+    this.attachSystemSttService(
+      options.systemSttService,
       options.onTranscript,
       options.utteranceDebounceMs,
       options.onAutoAnswerTrigger
@@ -40,7 +40,7 @@ export class SessionRuntimeService {
       options.shouldAutoTriggerFromMic ? options.onAutoAnswerTrigger : undefined
     )
 
-    options.audioCapture.on('audio-data', ({ source, chunk }: { source: 'interviewer' | 'user'; chunk: Buffer }) => {
+    options.audioCapture.on('audio-data', ({ source, chunk }: { source: 'system' | 'user'; chunk: Buffer }) => {
       options.onAudioChunk(source, chunk)
     })
 
@@ -55,7 +55,7 @@ export class SessionRuntimeService {
     })
   }
 
-  attachInterviewerSttService(
+  attachSystemSttService(
     service: STTService | null,
     onTranscript: (entry: TranscriptEntry) => void,
     utteranceDebounceMs: number,

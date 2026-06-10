@@ -26,7 +26,7 @@ import {
 } from './pipeline'
 
 type AudioDataEvent = {
-  source: 'interviewer' | 'user'
+  source: 'system' | 'user'
   chunk: Buffer
 }
 

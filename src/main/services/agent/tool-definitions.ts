@@ -334,7 +334,7 @@ export const LIVE_AGENT_EXTRA_TOOL_DEFINITIONS: ToolDefinition[] = [
     function: {
       name: 'open_answer_window',
       description:
-        'Open the main detail window with a substantial response. Use according to the active session intent: interview/class code or study detail, meeting decisions/actions, presentation notes/Q&A, and quick-help long/tool-heavy results.',
+        'Open the main detail window with a substantial response. Use for long, structured, or tool-heavy results that do not fit a short bubble.',
       parameters: {
         type: 'object',
         properties: {

@@ -89,7 +89,7 @@ contextBridge.exposeInMainWorld('api', {
   saveSessionPreset: (input: {
     id?: string
     name: string
-    agentMode: 'interview' | 'companion'
+    agentMode: 'session' | 'companion'
     context: Record<string, unknown>
   }) => ipcRenderer.invoke('session-preset:save', input),
   deleteSessionPreset: (id: string) => ipcRenderer.invoke('session-preset:delete', id),
@@ -110,7 +110,6 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('cost:update', handler)
     return () => ipcRenderer.removeListener('cost:update', handler)
   },
-  uploadResume: () => ipcRenderer.invoke('context:upload-resume'),
   listContextFolders: () => ipcRenderer.invoke(IPC.LIST_CONTEXT_FOLDERS),
   loadFileContext: (company?: string) => ipcRenderer.invoke(IPC.LOAD_FILE_CONTEXT, company),
   openContextFolder: () => ipcRenderer.invoke(IPC.OPEN_CONTEXT_FOLDER),
@@ -175,7 +174,7 @@ contextBridge.exposeInMainWorld('api', {
   copyToClipboard: (text: string) => ipcRenderer.invoke('clipboard:write', text),
 
   // Audio - send chunks from renderer to main
-  sendAudioChunk: (source: 'interviewer' | 'user', chunk: ArrayBuffer) => ipcRenderer.send('audio:chunk', source, chunk),
+  sendAudioChunk: (source: 'system' | 'user', chunk: ArrayBuffer) => ipcRenderer.send('audio:chunk', source, chunk),
   getAgentTools: () => ipcRenderer.invoke(IPC.GET_AGENT_TOOLS),
   getHeartbeatState: () => ipcRenderer.invoke(IPC.GET_HEARTBEAT_STATE),
 
@@ -376,7 +375,7 @@ declare global {
       listSessionPresets: () => Promise<Array<{
         id: string
         name: string
-        agentMode: 'interview' | 'companion'
+        agentMode: 'session' | 'companion'
         context: Record<string, unknown>
         createdAt: number
         lastUsedAt?: number
@@ -384,12 +383,12 @@ declare global {
       saveSessionPreset: (input: {
         id?: string
         name: string
-        agentMode: 'interview' | 'companion'
+        agentMode: 'session' | 'companion'
         context: Record<string, unknown>
       }) => Promise<{
         id: string
         name: string
-        agentMode: 'interview' | 'companion'
+        agentMode: 'session' | 'companion'
         context: Record<string, unknown>
         createdAt: number
         lastUsedAt?: number
@@ -417,7 +416,6 @@ declare global {
           byModel: Record<string, { promptTokens: number; completionTokens: number; calls: number }>
         }) => void
       ) => () => void
-      uploadResume: () => Promise<any>
       listContextFolders: () => Promise<string[]>
       loadFileContext: (company?: string) => Promise<{ content: string; files: string[]; warnings: string[] }>
       openContextFolder: () => Promise<any>
@@ -450,7 +448,7 @@ declare global {
       openSettings: () => void
       getAgentTools: () => Promise<AgentToolInfo[]>
       getHeartbeatState: () => Promise<any>
-      sendAudioChunk: (source: 'interviewer' | 'user', chunk: ArrayBuffer) => void
+      sendAudioChunk: (source: 'system' | 'user', chunk: ArrayBuffer) => void
       onTranscriptUpdate: (callback: (entry: any) => void) => () => void
       onAnswerQuestion: (callback: (question: string) => void) => () => void
       onAnswerModelSelection: (callback: (selection: ModelSelectionInfo) => void) => () => void

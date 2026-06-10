@@ -30,8 +30,6 @@ const emptyProfile: ProfileContext = {
   currentFocus: '',
   commsStyle: '',
   extraInstructions: '',
-  interviewPrep: { resume: '', jobDescription: '', skillsSummary: '', targetCompanies: '' },
-  learning: { school: '', course: '', goals: '' },
   relationships: '',
 }
 
@@ -94,7 +92,6 @@ function Field({ label, icon, hint, children }: FieldProps) {
 export default function ContextUpload() {
   const [profile, setProfile] = useState<ProfileContext>(emptyProfile)
   const [saved, setSaved] = useState(false)
-  const [resumeFile, setResumeFile] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [contextFiles, setContextFiles] = useState<string[]>([])
   const [contextFolders, setContextFolders] = useState<string[]>([])
@@ -103,18 +100,6 @@ export default function ContextUpload() {
   // Generic field updater — handles both top-level and nested-block fields.
   const update = <K extends keyof ProfileContext>(key: K, value: ProfileContext[K]): void => {
     setProfile((prev) => ({ ...prev, [key]: value }))
-  }
-  const updateInterview = <K extends keyof ProfileContext['interviewPrep']>(
-    key: K,
-    value: ProfileContext['interviewPrep'][K]
-  ): void => {
-    setProfile((prev) => ({ ...prev, interviewPrep: { ...prev.interviewPrep, [key]: value } }))
-  }
-  const updateLearning = <K extends keyof ProfileContext['learning']>(
-    key: K,
-    value: ProfileContext['learning'][K]
-  ): void => {
-    setProfile((prev) => ({ ...prev, learning: { ...prev.learning, [key]: value } }))
   }
   const loadContextFiles = useCallback(async () => {
     const folders = await window.api.listContextFolders()
@@ -141,8 +126,6 @@ export default function ContextUpload() {
       setProfile({
         ...emptyProfile,
         ...stored,
-        interviewPrep: { ...emptyProfile.interviewPrep, ...(stored.interviewPrep || {}) },
-        learning: { ...emptyProfile.learning, ...(stored.learning || {}) },
       })
     }
   }, [])
@@ -158,26 +141,7 @@ export default function ContextUpload() {
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const handleUploadResume = async (): Promise<void> => {
-    setAnalyzing(true)
-    try {
-      const result = await window.api.uploadResume()
-      if (result) {
-        updateInterview('resume', result.text)
-        setResumeFile(result.filePath)
-      }
-    } catch (err) {
-      console.error('Resume upload failed:', err)
-    } finally {
-      setAnalyzing(false)
-    }
-  }
 
-  const ip = profile.interviewPrep
-  const learning = profile.learning
-
-  const interviewFilled = !!(ip.resume || ip.jobDescription || ip.skillsSummary || ip.targetCompanies)
-  const learningFilled = !!(learning.school || learning.course || learning.goals)
   const relationshipsFilled = !!profile.relationships
 
   return (
@@ -186,8 +150,7 @@ export default function ContextUpload() {
       <div>
         <h2 className="text-[18px] font-semibold text-white/90 tracking-tight">Profile</h2>
         <p className="text-[13px] text-white/35 mt-1">
-          Universal facts always load. Use-case blocks load only for the matching session intent
-          (interview, class, workspace).
+          Universal facts about you, loaded into every companion session.
         </p>
       </div>
 
@@ -278,113 +241,6 @@ export default function ContextUpload() {
         </h3>
 
         <div className="space-y-3">
-          <CollapsibleCard
-            title="Interview prep"
-            description={
-              interviewFilled ? 'Filled' : 'Resume, target role, skills — loaded for interview sessions only'
-            }
-            icon={<Briefcase size={16} />}
-            defaultOpen={interviewFilled}
-          >
-            <Field label="Resume" icon={<FileText size={11} />}>
-              <div className="flex items-center justify-end mb-2">
-                <button
-                  onClick={handleUploadResume}
-                  disabled={analyzing}
-                  className={`flex items-center gap-1.5 text-[11px] font-medium rounded-lg px-2.5 py-1 transition-all btn-press ${
-                    analyzing
-                      ? 'text-amber-400/70 bg-amber-400/[0.06]'
-                      : 'text-cyan-400/70 hover:text-cyan-400 bg-cyan-400/[0.05] hover:bg-cyan-400/[0.08] border border-cyan-400/10'
-                  }`}
-                >
-                  <Upload size={11} />
-                  {analyzing ? 'Analyzing...' : 'Upload PDF/TXT'}
-                </button>
-              </div>
-              {resumeFile && (
-                <p className="text-[10.5px] text-white/25 mb-2 font-mono truncate">{resumeFile}</p>
-              )}
-              <textarea
-                value={ip.resume}
-                onChange={(e) => updateInterview('resume', e.target.value)}
-                placeholder="Paste resume here or upload a file…"
-                rows={6}
-                className={`${inputClass} resize-y`}
-              />
-            </Field>
-
-            <Field label="Job Description" icon={<FileText size={11} />}>
-              <textarea
-                value={ip.jobDescription}
-                onChange={(e) => updateInterview('jobDescription', e.target.value)}
-                placeholder="Paste the target job description…"
-                rows={4}
-                className={`${inputClass} resize-y`}
-              />
-            </Field>
-
-            <Field label="Skills Summary" icon={<Lightbulb size={11} />}>
-              <textarea
-                value={ip.skillsSummary}
-                onChange={(e) => updateInterview('skillsSummary', e.target.value)}
-                placeholder="Key skills and areas of expertise…"
-                rows={3}
-                className={`${inputClass} resize-y`}
-              />
-            </Field>
-
-            <Field label="Target Companies">
-              <input
-                type="text"
-                value={ip.targetCompanies}
-                onChange={(e) => updateInterview('targetCompanies', e.target.value)}
-                placeholder="e.g. early-stage German startups, EU remote, Berlin-based fintech"
-                className={inputClass}
-              />
-            </Field>
-          </CollapsibleCard>
-
-          <CollapsibleCard
-            title="Class / Learning"
-            description={
-              learningFilled
-                ? 'Filled'
-                : 'School, current course, learning goals — loaded for class & meeting sessions'
-            }
-            icon={<GraduationCap size={16} />}
-            defaultOpen={learningFilled}
-          >
-            <Field label="School / Program">
-              <input
-                type="text"
-                value={learning.school}
-                onChange={(e) => updateLearning('school', e.target.value)}
-                placeholder="Ironhack — Web Dev PT, March 2026 cohort"
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Current Course / Module">
-              <input
-                type="text"
-                value={learning.course}
-                onChange={(e) => updateLearning('course', e.target.value)}
-                placeholder="Module 2 — React + MongoDB"
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Learning Goals">
-              <textarea
-                value={learning.goals}
-                onChange={(e) => updateLearning('goals', e.target.value)}
-                placeholder="What you want out of the program — capstone idea, target stack, portfolio outcomes…"
-                rows={3}
-                className={`${inputClass} resize-y`}
-              />
-            </Field>
-          </CollapsibleCard>
-
           <CollapsibleCard
             title="Relationships"
             description={

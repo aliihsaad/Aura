@@ -8,12 +8,12 @@ export class STTService extends EventEmitter {
   private isConnected = false
   private isClosing = false
   private apiKey: string
-  private speaker: 'interviewer' | 'user'
+  private speaker: 'system' | 'user'
   private audioSource: TranscriptAudioSource
   private language: string
   private keyterms: string[]
 
-  constructor(apiKey: string, speaker: 'interviewer' | 'user', language: string = 'en', keyterms: string[] = []) {
+  constructor(apiKey: string, speaker: 'system' | 'user', language: string = 'en', keyterms: string[] = []) {
     super()
     this.apiKey = apiKey
     this.speaker = speaker

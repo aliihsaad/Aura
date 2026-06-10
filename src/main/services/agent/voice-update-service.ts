@@ -166,7 +166,7 @@ function formatStructuredHints(p: ProfileContext): string {
 
 function formatSessionContext(s: SessionContext): string {
   const lines: string[] = []
-  const behavior = getSessionBehavior(s.sessionIntent || 'interview')
+  const behavior = getSessionBehavior(s.sessionIntent || 'session')
   if (s.sessionIntent) lines.push(`Intent: ${s.sessionIntent}`)
   if (s.subject) lines.push(`Subject: ${s.subject}`)
   if (s.sessionNotes) lines.push(`Notes from user: ${s.sessionNotes}`)

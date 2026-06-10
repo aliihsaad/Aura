@@ -21,7 +21,7 @@ import { getTranscriptSpeakerLabel, isSelfAuthoredEntry } from '@shared/session-
 interface TranscriptEntry {
   id: string
   text: string
-  speaker: 'interviewer' | 'user' | 'unknown'
+  speaker: 'system' | 'user' | 'unknown'
   timestamp: number
   isFinal: boolean
   source?: 'stt' | 'chat'
@@ -36,7 +36,7 @@ export default function ControlBar({ presenceState }: ControlBarProps) {
   const [isSessionActive, setIsSessionActive] = useState(false)
   const [companionRealtimeStatus, setCompanionRealtimeStatus] =
     useState<CompanionRealtimeStatus>('off')
-  const [sessionIntent, setSessionIntent] = useState<SessionIntent>('interview')
+  const [sessionIntent, setSessionIntent] = useState<SessionIntent>('quick-help')
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
   const [showTranscript, setShowTranscript] = useState(false)
   const [chatInput, setChatInput] = useState('')

@@ -98,7 +98,7 @@ export interface SessionState {
 export interface TranscriptEntry {
   id: string
   text: string
-  speaker: 'interviewer' | 'user' | 'unknown'
+  speaker: 'system' | 'user' | 'unknown'
   timestamp: number
   isFinal: boolean
   // Origin of this entry. 'stt' (default/undefined) = live transcription.

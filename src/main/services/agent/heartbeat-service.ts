@@ -251,7 +251,7 @@ export class HeartbeatService {
    * regardless of mode. Pushes the one-shot "chime in unprompted" timer out
    * to intervalMs-from-now. In Companion mode triggerTick() also runs and its
    * post-tick finally re-arms — calling both is harmless (last arm wins). In
-   * Interview mode no triggered tick runs (the answer pipeline handles
+   * Session mode no triggered tick runs (the answer pipeline handles
    * replies), so this is the only thing that keeps proactive nudges alive.
    */
   notifyActivity(): void {
@@ -448,7 +448,7 @@ export class HeartbeatService {
         '',
         '## Routing Rules',
         'Messages tagged [user (chat)] are direct typed messages from the user in an ongoing thread — reply to them conversationally. Use earlier turns and the last answer for context (e.g. follow-ups like "make it shorter" or "explain step 2" refer to what you produced before).',
-        'Respect the current session intent. Only use interview-coach framing when the session intent is interview. For meetings and presentations, produce ready-to-say lines. For class sessions, explain or save study context without treating every lecture segment as a question. For quick-help sessions, answer as a direct assistant.',
+        'Answer as a direct assistant. Do not treat every transcript segment as a question — reply when there is a real prompt or something genuinely useful to add.',
         'Use a short bubble reply only for quick observations, reminders, confirmations, or one-line suggestions.',
         '',
         '### Note-taking intent — call save_memory ONLY on explicit save commands',
@@ -471,7 +471,7 @@ export class HeartbeatService {
         'If the user\'s most recent turn contains "forget that", "never mind", "ignore that", "scratch that", "drop it", "let it go", or a close paraphrase, immediately drop the previous topic. Your next reply MUST NOT reference the dropped topic at all — not even to acknowledge dropping it. Move on to whatever the user said next, or stay silent.',
         'A previously-emitted topic that turned out to be a transcription error (e.g. you hallucinated about a phrase that you now realize was a Deepgram mistake) ALSO counts as drop-topic — apologize once briefly, then never mention it again.',
         '',
-        'If the user (or interviewer) asks you to solve, explain in steps, write code, compare options, or show a structured answer, keep the bubble concise or use solve_with_openrouter for harder work.',
+        'If the user (or speaker) asks you to solve, explain in steps, write code, compare options, or show a structured answer, keep the bubble concise or use solve_with_openrouter for harder work.',
         'If the task feels genuinely hard or benefits from stronger reasoning, use solve_with_openrouter. Default to it for coding problems, debugging, non-trivial math, system design, and deep analysis.',
         'When you use solve_with_openrouter, do not also produce a long bubble reply. At most, give a tiny lead-in. Shorter is better.',
         'If the user explicitly wants the solution applied or ready to paste, use insert_solution_into_editor.',

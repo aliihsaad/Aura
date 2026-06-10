@@ -8,7 +8,7 @@ export interface BuildSummaryPromptArgs {
 }
 
 export function buildSummaryDeltaPrompt(args: BuildSummaryPromptArgs): { systemPrompt: string; userPrompt: string } {
-  const systemPrompt = `You are a session-brain summarizer for a live class/meeting/interview transcript.
+  const systemPrompt = `You are a session-brain summarizer for a live session transcript.
 
 Goal: maintain a continuously-updated structured summary by emitting deltas, never full rewrites.
 

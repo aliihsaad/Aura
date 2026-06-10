@@ -13,8 +13,6 @@ import {
   X,
   Settings,
   ChevronRight,
-  Zap,
-  ZapOff,
   Eye,
   EyeOff,
   Globe,
@@ -38,7 +36,6 @@ interface ControlsProps {
   isSessionPaused: boolean
   presenceState: AgentPresenceState
   sessionLabel: string
-  autoAnswerEnabled: boolean
   micEnabled: boolean
   showAnswerPane: boolean
   showTranscript: boolean
@@ -50,7 +47,6 @@ interface ControlsProps {
   onAnswerNow: () => void
   onCaptureScreen: () => void
   onToggleMic: () => void
-  onToggleAutoAnswers: () => void
   onToggleTranscript: () => void
   onToggleAnswerPane: () => void
   onToggleLiveVoice: () => void
@@ -68,7 +64,6 @@ export default function Controls({
   isSessionPaused,
   presenceState,
   sessionLabel,
-  autoAnswerEnabled,
   micEnabled,
   showAnswerPane,
   showTranscript,
@@ -80,7 +75,6 @@ export default function Controls({
   onAnswerNow,
   onCaptureScreen,
   onToggleMic,
-  onToggleAutoAnswers,
   onToggleTranscript,
   onToggleAnswerPane,
   onToggleLiveVoice,
@@ -107,7 +101,6 @@ export default function Controls({
   const [sttLanguage, setSttLanguage] = useState('en')
   const [sttReconnecting, setSttReconnecting] = useState(false)
   const [confirmExit, setConfirmExit] = useState(false)
-  const [agentMode, setAgentMode] = useState<'interview' | 'companion'>('interview')
   const menuRef = useRef<HTMLDivElement>(null)
   const chatInputRef = useRef<HTMLInputElement>(null)
 
@@ -117,11 +110,6 @@ export default function Controls({
       if (config?.contentProtection !== undefined) setContentProtection(config.contentProtection)
       if (config?.autoModelSelection !== undefined) setAutoModelSelection(config.autoModelSelection)
       if (config?.sttLanguage) setSttLanguage(config.sttLanguage)
-      if (config?.agentMode === 'interview' || config?.agentMode === 'companion') {
-        setAgentMode(config.agentMode)
-      } else if (config?.liveAgentEnabled) {
-        setAgentMode('companion')
-      }
     })
   }, [])
 
@@ -533,49 +521,6 @@ export default function Controls({
                 </div>
               )}
             </div>
-
-            {/* Mode */}
-            <div className="px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white/30">Mode</div>
-            <div className="flex flex-col gap-0.5 px-1.5">
-              {(['interview', 'companion'] as const).map((m) => (
-                <button
-                  key={m}
-                  disabled={isSessionActive}
-                  onClick={async () => {
-                    if (isSessionActive) return
-                    setAgentMode(m)
-                    await window.api.setConfig({
-                      agentMode: m,
-                      liveAgentEnabled: m === 'companion',
-                    })
-                  }}
-                  className={`rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-all duration-100 ${
-                    agentMode === m
-                      ? 'bg-cyan-500/8 text-cyan-400'
-                      : isSessionActive
-                        ? 'text-white/25'
-                        : 'text-white/60 hover:bg-white/4 hover:text-white/80'
-                  }`}
-                >
-                  {m === 'interview' ? 'Interview / Meeting' : 'Companion'}
-                </button>
-              ))}
-              {isSessionActive && (
-                <div className="px-2.5 py-1 text-[10.5px] leading-relaxed text-white/25">
-                  Stop the session before switching modes.
-                </div>
-              )}
-            </div>
-
-            <div className="my-1.5 h-px bg-white/4" />
-
-            {/* Auto Generate */}
-            <MenuToggle
-              icon={autoAnswerEnabled ? <Zap size={15} /> : <ZapOff size={15} />}
-              label="Auto Generate"
-              checked={autoAnswerEnabled}
-              onChange={() => { onToggleAutoAnswers(); }}
-            />
 
             {/* Auto Model Selection */}
             <MenuToggle

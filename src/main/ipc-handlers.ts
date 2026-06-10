@@ -292,7 +292,7 @@ function deepgramSpeechInputKeyForCurrentConfig(): string {
 }
 
 function createSelectedSttService(
-  speaker: 'interviewer' | 'user',
+  speaker: 'system' | 'user',
   language: string,
   keyterms: string[] = []
 ): STTService {
@@ -761,7 +761,7 @@ function setCompanionVoicePlaybackActive(active: boolean): void {
     : Date.now() + VOICE_PLAYBACK_SUPPRESSION_TAIL_MS
 }
 
-function shouldSuppressCapturedInterviewerAudio(): boolean {
+function shouldSuppressCapturedSystemAudio(): boolean {
   return companionVoicePlaybackActive || Date.now() < companionVoicePlaybackSuppressUntil
 }
 
@@ -1266,7 +1266,7 @@ async function requestApproval(_input: {
   bytes?: number
 }): Promise<'approve' | 'decline' | 'always-allow-session'> {
   // No interactive tool-approval gates exist after Workspace mode was removed
-  // — tool calls in Interview/Companion never need user confirmation. Decline
+  // — tool calls in Session/Companion never need user confirmation. Decline
   // any future gated request as a safe default.
   return 'decline'
 }
@@ -1397,7 +1397,7 @@ const RECALL_QUERY_NOISE_TOKENS = new Set([
   'company',
   'general',
   'help',
-  'interview',
+  'session',
   'later',
   'need',
   'notes',
@@ -1476,28 +1476,28 @@ function broadcastActiveMode(mode: AgentMode): void {
   sendToAllWindows(KernelChannels.modeActive, mode)
 }
 
-function sendInterviewQuestion(question: string): void {
+function sendSessionQuestion(question: string): void {
   sendToOverlay(IPC.LLM_QUESTION, question)
   sendToAnswer(IPC.LLM_QUESTION, question)
   sendToCanvas(IPC.LLM_QUESTION, question)
   sendToAnswer(ModeChannels.answer.question, question)
 }
 
-function sendInterviewModelSelection(selection: ModelSelectionInfo): void {
+function sendSessionModelSelection(selection: ModelSelectionInfo): void {
   sendToOverlay(IPC.LLM_MODEL_SELECTION, selection)
   sendToAnswer(IPC.LLM_MODEL_SELECTION, selection)
   sendToCanvas(IPC.LLM_MODEL_SELECTION, selection)
   sendToAnswer(ModeChannels.answer.modelSelection, selection)
 }
 
-function sendInterviewAnswerChunk(value: string): void {
+function sendSessionAnswerChunk(value: string): void {
   sendToOverlay(IPC.LLM_RESPONSE_CHUNK, value)
   sendToAnswer(IPC.LLM_RESPONSE_CHUNK, value)
   sendToCanvas(IPC.LLM_RESPONSE_CHUNK, value)
   sendToAnswer(ModeChannels.answer.answerToken, value)
 }
 
-function sendInterviewAnswerDone(value: string | AnswerDonePayload): void {
+function sendSessionAnswerDone(value: string | AnswerDonePayload): void {
   sendToOverlay(IPC.LLM_RESPONSE_DONE, value)
   sendToAnswer(IPC.LLM_RESPONSE_DONE, value)
   sendToCanvas(IPC.LLM_RESPONSE_DONE, value)
@@ -1530,18 +1530,18 @@ export function setupIpcHandlers(): void {
   // closure on each session start so it captures fresh per-session
   // inputs (deepgram key, language, mic toggle, …) at that moment.
   // Companion voice is a config flag inside the single companion builder;
-  // the audio-chunk + transcript callbacks are identical to interview,
+  // the audio-chunk + transcript callbacks are identical to session,
   // so we share a helper.
   const buildSttRuntimeCallbacks = () => ({
     onTranscript: handleTranscriptEntry,
-    onAudioChunk: (source: 'interviewer' | 'user', chunk: Buffer) => {
-      const suppressInterviewerCapture =
-        source === 'interviewer' && shouldSuppressCapturedInterviewerAudio()
+    onAudioChunk: (source: 'system' | 'user', chunk: Buffer) => {
+      const suppressSystemAudioCapture =
+        source === 'system' && shouldSuppressCapturedSystemAudio()
       const suppressMicBleed =
         source === 'user' && !voiceBargeInOpen && shouldSuppressMicBleedDuringPlayback(chunk)
-      if (suppressInterviewerCapture || suppressMicBleed) return
+      if (suppressSystemAudioCapture || suppressMicBleed) return
 
-      if (source === 'interviewer') {
+      if (source === 'system') {
         sessionRuntimeStore.sttService?.sendAudio(chunk)
         return
       }
@@ -1574,7 +1574,7 @@ export function setupIpcHandlers(): void {
       audioCapture,
       // Companion mode drives replies via the heartbeat tick in
       // ipc-handlers (handleTranscriptEntry → scheduleHeartbeatTrigger).
-      // The auto-answer pipeline is interview-only, so this hook is a
+      // The auto-answer pipeline is session-only, so this hook is a
       // no-op in companion.
       onAutoAnswerTrigger: () => {},
       stopVoiceOutput: () => {
@@ -1753,13 +1753,13 @@ export function setupIpcHandlers(): void {
       // Legacy fallback for modes without an active pipeline.
       const sttLanguage = configStore.get('sttLanguage', 'en') as string
       const keyterms = sessionRuntimeStore.currentSttKeyterms ?? []
-      sessionRuntimeStore.sttService = createSelectedSttService('interviewer', sttLanguage, keyterms)
+      sessionRuntimeStore.sttService = createSelectedSttService('system', sttLanguage, keyterms)
       sessionRuntimeStore.micSttService = getMicEnabled() ? createSelectedSttService('user', sttLanguage, keyterms) : null
       sessionRuntimeStore.llmService = new LLMService(openrouterKey, model)
       sessionRuntimeService.clearPendingGeneration()
 
       sessionRuntimeService.bindSessionRuntime({
-        interviewerSttService: sessionRuntimeStore.sttService,
+        systemSttService: sessionRuntimeStore.sttService,
         micSttService: sessionRuntimeStore.micSttService,
         llmService: sessionRuntimeStore.llmService,
         audioCapture,
@@ -1768,15 +1768,15 @@ export function setupIpcHandlers(): void {
         onAutoAnswerTrigger: () => {},
         shouldAutoTriggerFromMic: shouldAutoAnswerFromMic(),
         onAudioChunk: (source, chunk) => {
-          const suppressInterviewerCapture =
-            source === 'interviewer' && shouldSuppressCapturedInterviewerAudio()
+          const suppressSystemAudioCapture =
+            source === 'system' && shouldSuppressCapturedSystemAudio()
           const suppressMicBleed =
             source === 'user' && !voiceBargeInOpen && shouldSuppressMicBleedDuringPlayback(chunk)
-          if (suppressInterviewerCapture || suppressMicBleed) {
+          if (suppressSystemAudioCapture || suppressMicBleed) {
             return
           }
 
-          if (source === 'interviewer') {
+          if (source === 'system') {
             sessionRuntimeStore.sttService?.sendAudio(chunk)
             return
           }
@@ -1849,7 +1849,7 @@ export function setupIpcHandlers(): void {
       isPaused: false,
       startTime: sessionRuntimeStore.currentSessionStartTime,
       micEnabled: getMicEnabled(),
-      sessionIntent: contextManager.getSessionContext().sessionIntent || 'interview',
+      sessionIntent: contextManager.getSessionContext().sessionIntent || 'session',
       liveAgentMode: liveAgentMode(),
       liveAgentCaptionsEnabled: isLiveAgentCaptionsEnabled(),
       companionEngine: modeConfig.getCompanionModeConfig().engine,
@@ -1930,7 +1930,7 @@ export function setupIpcHandlers(): void {
       isPaused: false,
       startTime: null,
       micEnabled: getMicEnabled(),
-      sessionIntent: contextManager.getSessionContext().sessionIntent || 'interview',
+      sessionIntent: contextManager.getSessionContext().sessionIntent || 'session',
       liveAgentMode: liveAgentMode(),
       liveAgentCaptionsEnabled: isLiveAgentCaptionsEnabled(),
       companionEngine: modeConfig.getCompanionModeConfig().engine,
@@ -2004,7 +2004,7 @@ export function setupIpcHandlers(): void {
     liveAgentCaptionsEnabled: isLiveAgentCaptionsEnabled(),
     companionEngine: modeConfig.getCompanionModeConfig().engine,
     companionRealtimeStatus: sessionRuntimeStore.companionRealtimeStatus,
-    sessionIntent: contextManager.getSessionContext().sessionIntent || 'interview',
+    sessionIntent: contextManager.getSessionContext().sessionIntent || 'session',
   }))
 
   ipcMain.handle(IPC.GET_SESSIONS, async () => {
@@ -2115,7 +2115,7 @@ export function setupIpcHandlers(): void {
   })
 
   // ── Audio from renderer ──────────────────────────────────────
-  ipcMain.on('audio:chunk', (_event, source: 'interviewer' | 'user', chunk: ArrayBuffer) => {
+  ipcMain.on('audio:chunk', (_event, source: 'system' | 'user', chunk: ArrayBuffer) => {
     if (sessionRuntimeStore.isSessionPaused) return
     audioCapture.processAudioChunk(source, Buffer.from(chunk))
   })
@@ -2135,7 +2135,7 @@ export function setupIpcHandlers(): void {
       sessionRuntimeStore.sessionTranscript,
       sessionRuntimeStore.lastGeneratedPromptTranscriptCount,
       true,
-      contextManager.getSessionContext().sessionIntent || 'interview'
+      contextManager.getSessionContext().sessionIntent || 'session'
     )
     if (!question) return { success: false, reason: 'No question available yet' }
     if (isAgentTaskBusy()) {
@@ -2192,7 +2192,7 @@ export function setupIpcHandlers(): void {
       sessionRuntimeStore.sessionTranscript,
       sessionRuntimeStore.lastGeneratedPromptTranscriptCount,
       true,
-      contextManager.getSessionContext().sessionIntent || 'interview'
+      contextManager.getSessionContext().sessionIntent || 'session'
     )
     if (!question) return
     if (isAgentTaskBusy()) {
@@ -2503,7 +2503,7 @@ export function setupIpcHandlers(): void {
       'autoModelSelection', 'overlayOpacity', 'fontSize', 'autoAnswerEnabled',
       'micEnabled', 'sttLanguage', 'contentProtection',
       'personality', 'interruptionPolicy', 'heartbeatIntervalMs', 'heartbeatEnabled',
-      'interviewHeartbeatEnabled',
+      'sessionHeartbeatEnabled',
       'bubbleFontSize', 'bubbleWidth', 'agentMode', 'liveAgentEnabled',
       'liveAgentVoiceEnabled', 'liveAgentVoiceName', 'companionVoiceModel',
       'companionEngine',
@@ -2551,8 +2551,8 @@ export function setupIpcHandlers(): void {
         heartbeatService.start()
       }
     }
-    if (config.interviewHeartbeatEnabled !== undefined) {
-      heartbeatService.setProactiveEnabled(Boolean(config.interviewHeartbeatEnabled))
+    if (config.sessionHeartbeatEnabled !== undefined) {
+      heartbeatService.setProactiveEnabled(Boolean(config.sessionHeartbeatEnabled))
     }
     if (config.heartbeatIntervalMs !== undefined) {
       heartbeatService.setIntervalMs(Number(config.heartbeatIntervalMs))
@@ -2606,8 +2606,8 @@ export function setupIpcHandlers(): void {
       try {
         if (sessionRuntimeStore.sttService) {
           await sessionRuntimeStore.sttService.disconnect()
-          sessionRuntimeStore.sttService = createSelectedSttService('interviewer', newLang, sessionRuntimeStore.currentSttKeyterms ?? [])
-          sessionRuntimeService.attachInterviewerSttService(
+          sessionRuntimeStore.sttService = createSelectedSttService('system', newLang, sessionRuntimeStore.currentSttKeyterms ?? [])
+          sessionRuntimeService.attachSystemSttService(
             sessionRuntimeStore.sttService,
             handleTranscriptEntry,
             UTTERANCE_DEBOUNCE_MS,
@@ -2635,8 +2635,8 @@ export function setupIpcHandlers(): void {
         const prevLang = configStore.get('sttLanguage', 'en') as string
         try {
           if (sessionRuntimeStore.sttService) {
-            sessionRuntimeStore.sttService = createSelectedSttService('interviewer', prevLang, sessionRuntimeStore.currentSttKeyterms ?? [])
-            sessionRuntimeService.attachInterviewerSttService(
+            sessionRuntimeStore.sttService = createSelectedSttService('system', prevLang, sessionRuntimeStore.currentSttKeyterms ?? [])
+            sessionRuntimeService.attachSystemSttService(
               sessionRuntimeStore.sttService,
               handleTranscriptEntry,
               UTTERANCE_DEBOUNCE_MS,
@@ -3302,13 +3302,13 @@ function handleTranscriptEntry(
     // Barge-in: the user said something new while the agent is mid-reply.
     // Drop the now-stale reply (and its TTS) immediately rather than letting
     // it finish narrating — the debounced re-trigger below produces a fresh
-    // one. Only for the user's own voice/chat, not the interviewer channel.
+    // one. Only for the user's own voice/chat, not the speaker channel.
     if (entry.speaker === 'user' && heartbeatService.isTickInFlight()) {
       heartbeatService.abortInFlightTick()
       stopCompanionVoiceOutput()
     }
     // Keep the "chime in unprompted" timer tracking the last activity. In
-    // Companion mode triggerTick (below) also runs and re-arms; in Interview
+    // Companion mode triggerTick (below) also runs and re-arms; in Session
     // mode this is the only thing that keeps proactive nudges alive now that
     // the old metronome poll is gone.
     if (shouldNotifyHeartbeat) {
@@ -3326,7 +3326,7 @@ function isSessionReportRequest(text: string): boolean {
   if (!normalized) return false
   const asksForReport = /\breport\b/.test(normalized)
   const asksToWrite = /\b(write|save|create|generate|make|draft|add|put)\b/.test(normalized)
-  const scopesToSessionNotes = /\b(session|conversation|meeting|class|notes?|note)\b/.test(normalized)
+  const scopesToSessionNotes = /\b(session|conversation|notes?|note)\b/.test(normalized)
   return asksForReport && asksToWrite && scopesToSessionNotes
 }
 
@@ -3499,7 +3499,7 @@ function broadcastSessionState(): void {
     liveAgentCaptionsEnabled: isLiveAgentCaptionsEnabled(),
     companionEngine: modeConfig.getCompanionModeConfig().engine,
     companionRealtimeStatus: sessionRuntimeStore.companionRealtimeStatus,
-    sessionIntent: contextManager.getSessionContext().sessionIntent || 'interview',
+    sessionIntent: contextManager.getSessionContext().sessionIntent || 'session',
     publishSessionState: (sessionState) => {
       sendToOverlay(IPC.SESSION_STATE, sessionState)
       sendToAnswer(IPC.SESSION_STATE, sessionState)
@@ -3522,13 +3522,13 @@ function beginAnswerStream(question: string, modelSelection: ModelSelectionInfo)
     showAnswerWindow: showAnswerSurfaceWindow,
     publishQuestion: (nextQuestion) => {
       heartbeatService.setPresenceState('speaking')
-      sendInterviewQuestion(nextQuestion)
+      sendSessionQuestion(nextQuestion)
     },
     publishModelSelection: (selection) => {
-      sendInterviewModelSelection(selection)
+      sendSessionModelSelection(selection)
     },
     publishChunk: (value) => {
-      sendInterviewAnswerChunk(value)
+      sendSessionAnswerChunk(value)
     },
     broadcastSessionState,
   })
@@ -3539,7 +3539,7 @@ function streamAnswerChunk(fullAnswer: string): void {
     fullAnswer,
     showAnswerWindow: showAnswerSurfaceWindow,
     publishChunk: (value) => {
-      sendInterviewAnswerChunk(value)
+      sendSessionAnswerChunk(value)
     },
   })
 }
@@ -3553,7 +3553,7 @@ function completeAnswerStream(answer: string, question: string): void {
     completedAt: Date.now(),
     showAnswerWindow: showAnswerSurfaceWindow,
     publishDone: (value) => {
-      sendInterviewAnswerDone({
+      sendSessionAnswerDone({
         text: value,
         attachments: pendingAnswerAttachments.length ? [...pendingAnswerAttachments] : undefined,
       })
@@ -3609,7 +3609,7 @@ function reportAnswerError(error: Error): void {
   sessionStateService.reportAnswerError({
     error,
     publishDone: (value) => {
-      sendInterviewAnswerDone(value)
+      sendSessionAnswerDone(value)
       if (sessionRuntimeStore.isSessionActive) {
         heartbeatService.setPresenceState('listening')
       }
@@ -3895,7 +3895,7 @@ async function runCurrentScreenAnswer(question: string): Promise<void> {
 }
 
 function buildScreenAnalysisQuestion(): string {
-  const sessionIntent = contextManager.getSessionContext().sessionIntent || 'interview'
+  const sessionIntent = contextManager.getSessionContext().sessionIntent || 'session'
   const latestQuestion = getLatestQuestionCandidate(
     sessionRuntimeStore.sessionTranscript,
     sessionRuntimeStore.lastGeneratedPromptTranscriptCount,

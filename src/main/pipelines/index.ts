@@ -2,7 +2,7 @@
  * Public surface of the pipelines/ package.
  *
  * One product mode: Companion (classic + realtime-beta engines).
- * Interview mode was removed in the Aura fork; Workspace was removed
+ * Session mode was removed in the Aura fork; Workspace was removed
  * 2026-05-11 (see vault vm_UyUOIsvmCmZBz6AU).
  *
  * ipc-handlers (which owns the singleton dependencies) calls

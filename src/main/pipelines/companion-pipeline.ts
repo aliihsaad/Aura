@@ -1,7 +1,7 @@
 /**
  * CompanionPipeline — Phase 2 of the mode-isolation refactor.
  *
- * Owns the companion-mode session runtime: dual STT (interviewer + mic
+ * Owns the companion-mode session runtime: dual STT (system audio + mic
  * for the user's barge-in voice), the per-session LLM service, audio
  * capture wiring, and the heartbeat lifecycle that drives the bubble
  * (and Aura TTS when voice mode is on).
@@ -39,7 +39,7 @@ import {
 export interface CompanionPipelineDeps {
   // ── Per-session inputs ────────────────────────────────────
   voiceEnabled: boolean
-  createSttService: (speaker: 'interviewer' | 'user', language: string, keyterms: string[]) => STTService
+  createSttService: (speaker: 'system' | 'user', language: string, keyterms: string[]) => STTService
   openrouterApiKey: string
   defaultModel: string
   sttLanguage: string
@@ -59,7 +59,7 @@ export interface CompanionPipelineDeps {
   // ── Runtime callbacks reused from the legacy binding ──────
   onTranscript: (entry: TranscriptEntry) => void
   onAutoAnswerTrigger: () => void
-  onAudioChunk: (source: 'interviewer' | 'user', chunk: Buffer) => void
+  onAudioChunk: (source: 'system' | 'user', chunk: Buffer) => void
   onAnswerChunk: (fullAnswer: string) => void
   onAnswerDone: (answer: string) => void
   onAnswerError: (error: Error) => void
@@ -80,7 +80,7 @@ export class CompanionPipeline extends BasePipeline {
     const d = this.deps
     const store = d.sessionRuntimeStore
 
-    store.sttService = d.createSttService('interviewer', d.sttLanguage, d.keyterms)
+    store.sttService = d.createSttService('system', d.sttLanguage, d.keyterms)
     store.micSttService = d.micEnabled
       ? d.createSttService('user', d.sttLanguage, d.keyterms)
       : null
@@ -89,7 +89,7 @@ export class CompanionPipeline extends BasePipeline {
     d.sessionRuntimeService.clearPendingGeneration()
 
     d.sessionRuntimeService.bindSessionRuntime({
-      interviewerSttService: store.sttService,
+      systemSttService: store.sttService,
       micSttService: store.micSttService,
       llmService: store.llmService,
       audioCapture: d.audioCapture,

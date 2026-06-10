@@ -1,7 +1,7 @@
 /**
  * Pipeline contract — Phase 0 of the mode-isolation refactor.
  *
- * Each product mode (interview / companion / workspace) implements this
+ * Each product mode (session / companion / workspace) implements this
  * interface in a dedicated pipeline class. The ModeRouter holds at most
  * one active pipeline at a time and forwards events to it.
  *

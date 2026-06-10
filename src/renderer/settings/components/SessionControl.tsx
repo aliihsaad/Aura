@@ -9,7 +9,7 @@ interface SessionSummary {
   durationSeconds: number
   companyName?: string
   roleName?: string
-  interviewType?: string
+  sessionType?: string
   subject?: string
   transcriptCount: number
   answerCount: number

@@ -2,46 +2,29 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, AlertTriangle } from 'lucide-react'
 import type {
   AgentPresenceState,
-  AgentMode,
   AnswerAttachment,
   AnswerDonePayload,
   CompanionRealtimeStatus,
   LiveAgentMode,
-  MeetingNote,
   SessionIntent,
   TranscriptAudioSource,
 } from '@shared/types'
-import type { StudyNotesSnapshot } from '@shared/session-brain-types'
 import Transcript from './components/Transcript'
 import AISuggestion from './components/AISuggestion'
 import FilePreview from './components/FilePreview'
-import AnswerTeleprompter from './components/AnswerTeleprompter'
-import AnswerQueue, { AnswerCandidate } from './components/AnswerQueue'
-import MeetingNotes from './components/MeetingNotes'
 import Controls from './components/Controls'
 import AudioCapture from './components/AudioCapture'
 import SessionSetup from './components/SessionSetup'
 import { getSessionBehavior, isExternalAudioEntry } from '@shared/session-intent-policy'
 
-type AnswerTab = 'answer' | 'queue' | 'notes' | 'companion'
-
 interface TranscriptEntry {
   id: string
   text: string
-  speaker: 'interviewer' | 'user' | 'unknown'
+  speaker: 'system' | 'user' | 'unknown'
   timestamp: number
   isFinal: boolean
   source?: 'stt' | 'chat'
   audioSource?: TranscriptAudioSource
-}
-
-interface TranscriptWindow {
-  id: string
-  text: string
-  speaker: 'external' | 'unknown'
-  timestamp: number
-  lastTimestamp: number
-  entryCount: number
 }
 
 interface AnswerHistoryEntry {
@@ -60,8 +43,8 @@ export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false)
   const [isSessionPaused, setIsSessionPaused] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
-  const [interimTranscript, setInterimTranscript] = useState<{ interviewer: string; user: string }>({
-    interviewer: '',
+  const [interimTranscript, setInterimTranscript] = useState<{ system: string; user: string }>({
+    system: '',
     user: '',
   })
   const [currentAnswer, setCurrentAnswer] = useState('')
@@ -71,15 +54,8 @@ export default function App() {
   const [isAnswering, setIsAnswering] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [showAnswerPane, setShowAnswerPane] = useState(true)
-  const [answerTab, setAnswerTab] = useState<AnswerTab>('answer')
-  const [activeMode, setActiveMode] = useState<AgentMode>('interview')
-  const [answerCandidates, setAnswerCandidates] = useState<AnswerCandidate[]>([])
-  const [meetingNotes, setMeetingNotes] = useState<MeetingNote[]>([])
-  const [studyNotes, setStudyNotes] = useState<StudyNotesSnapshot | null>(null)
-  const [answerTeleprompterOpen, setAnswerTeleprompterOpen] = useState(false)
   const [currentSessionIntent, setCurrentSessionIntent] = useState<SessionIntent | null>(null)
   const [showTranscript, setShowTranscript] = useState(true)
-  const [autoAnswerEnabled, setAutoAnswerEnabled] = useState(true)
   const [micEnabled, setMicEnabled] = useState(true)
   const [liveAgentMode, setLiveAgentMode] = useState<LiveAgentMode>('off')
   const [liveAgentCaptionsEnabled, setLiveAgentCaptionsEnabled] = useState(true)
@@ -102,9 +78,6 @@ export default function App() {
   const controlBarRef = useRef<HTMLDivElement | null>(null)
   const pendingAnswerQuestionRef = useRef('')
   const latestQuestionRef = useRef('')
-  const activeCandidateIdRef = useRef<string | null>(null)
-  const transcriptWindowRef = useRef<TranscriptWindow | null>(null)
-  const meetingNotesRef = useRef<MeetingNote[]>([])
   const currentModelSelectionRef = useRef<{ modelId: string; reason: string }>({ modelId: '', reason: '' })
   const [controlBarWidth, setControlBarWidth] = useState<number | null>(null)
   const [controlsHeight, setControlsHeight] = useState(320)
@@ -117,42 +90,6 @@ export default function App() {
   })
   const layoutRef = useRef<HTMLDivElement | null>(null)
 
-  const updateMeetingNotes = useCallback((updater: (notes: MeetingNote[]) => MeetingNote[]) => {
-    setMeetingNotes((prev) => {
-      const next = updater(prev)
-      meetingNotesRef.current = next
-      return next
-    })
-  }, [currentSessionIntent])
-
-  const replaceMeetingNotes = useCallback((notes: MeetingNote[]) => {
-    meetingNotesRef.current = notes
-    setMeetingNotes(notes)
-  }, [])
-
-  const flushTranscriptWindow = useCallback((windowToFlush?: TranscriptWindow | null) => {
-    const transcriptWindow = windowToFlush ?? transcriptWindowRef.current
-    if (!transcriptWindow) return
-
-    const candidateText = getAnswerCandidateText(transcriptWindow.text)
-    const entry = transcriptWindowToEntry(transcriptWindow)
-    if (candidateText) {
-      setAnswerCandidates((prev) => addAnswerCandidate(prev, entry, candidateText))
-      if ((activeMode === 'interview' || currentSessionIntent === 'class') && !isAnswering) {
-        setAnswerTab('queue')
-      }
-    } else if (currentSessionIntent !== 'class') {
-      const noteText = getMeetingNoteText(transcriptWindow.text)
-      if (noteText) {
-        updateMeetingNotes((prev) => addMeetingNote(prev, entry, noteText))
-      }
-    }
-
-    if (!windowToFlush) {
-      transcriptWindowRef.current = null
-    }
-  }, [activeMode, currentSessionIntent, isAnswering, updateMeetingNotes])
-
   // Listen for transcript updates from main process
   useEffect(() => {
     const cleanup = window.api.onTranscriptUpdate((entry: TranscriptEntry) => {
@@ -160,13 +97,6 @@ export default function App() {
 
       if (entry.isFinal) {
         setTranscript((prev) => [...prev, entry])
-        if (isExternalAudioEntry(entry)) {
-          const { ready, current } = appendTranscriptWindow(transcriptWindowRef.current, entry)
-          transcriptWindowRef.current = current
-          if (ready) flushTranscriptWindow(ready)
-        } else if (transcriptWindowRef.current) {
-          flushTranscriptWindow()
-        }
         setInterimTranscript((prev) => ({
           ...prev,
           [speaker]: '',
@@ -179,20 +109,6 @@ export default function App() {
       }
     })
     return cleanup
-  }, [flushTranscriptWindow])
-
-  useEffect(() => {
-    void window.api.setSessionNotes(meetingNotes)
-  }, [meetingNotes])
-
-  useEffect(() => {
-    void window.api.getStudyNotes?.().then((snapshot) => {
-      if (snapshot) setStudyNotes(snapshot)
-    })
-    const cleanup = window.api.onStudyNotesUpdate?.((snapshot) => {
-      setStudyNotes(snapshot)
-    })
-    return () => cleanup?.()
   }, [])
 
   // Listen for LLM answer chunks
@@ -200,10 +116,8 @@ export default function App() {
     const cleanupChunk = window.api.onAnswerChunk((answer: string) => {
       if (answer === '') {
         pendingAnswerQuestionRef.current = pendingAnswerQuestionRef.current || latestQuestionRef.current || 'Current Prompt'
-        setAnswerTeleprompterOpen(false)
         setCurrentAttachments([])
       }
-      setAnswerTab('answer')
       setShowAnswerPane(true)
       setCurrentAnswer(answer)
       setIsAnswering(true)
@@ -212,7 +126,6 @@ export default function App() {
       const answer = typeof payload === 'string' ? payload : payload.text
       const attachments = typeof payload === 'string' ? [] : payload.attachments ?? []
       if (answer.trim()) {
-        setAnswerTab('answer')
         setShowAnswerPane(true)
       }
       setCurrentAnswer(answer)
@@ -221,19 +134,6 @@ export default function App() {
 
       const question = pendingAnswerQuestionRef.current || latestQuestionRef.current || 'Current Prompt'
       if (answer.trim()) {
-        if (shouldAutoOpenAnswerTeleprompter(question, answer, currentSessionIntent)) {
-          setAnswerTeleprompterOpen(true)
-        }
-        const answeredCandidateId = activeCandidateIdRef.current
-        if (answeredCandidateId) {
-          setAnswerCandidates((prev) =>
-            prev.map((item) =>
-              item.id === answeredCandidateId ? { ...item, status: 'answered' } : item
-            )
-          )
-          activeCandidateIdRef.current = null
-        }
-
         setAnswerHistory((prev) => {
           const nextEntry = {
             question,
@@ -287,10 +187,6 @@ export default function App() {
   // Listen for session state
   useEffect(() => {
     void window.api.getConfig().then((config) => {
-      if (config?.agentMode) {
-        setActiveMode(config.agentMode as AgentMode)
-      }
-      setAutoAnswerEnabled(config?.autoAnswerEnabled ?? true)
       setMicEnabled(config?.micEnabled ?? true)
       setCurrentModelSelection({
         modelId: config?.defaultModel || '',
@@ -318,9 +214,6 @@ export default function App() {
   const applySessionState = useCallback((state: any) => {
     setIsSessionActive(state.isActive)
     setIsSessionPaused(Boolean(state.isPaused))
-    if (typeof state.autoAnswerEnabled === 'boolean') {
-      setAutoAnswerEnabled(state.autoAnswerEnabled)
-    }
     if (typeof state.micEnabled === 'boolean') {
       setMicEnabled(state.micEnabled)
     }
@@ -346,14 +239,10 @@ export default function App() {
       setCurrentAttachments([])
       setAnswerHistory([])
       setHistoryIndex(-1)
-      setAnswerTeleprompterOpen(false)
       setTranscript([])
-      setInterimTranscript({ interviewer: '', user: '' })
+      setInterimTranscript({ system: '', user: '' })
       pendingAnswerQuestionRef.current = ''
       latestQuestionRef.current = ''
-      setAnswerCandidates([])
-      setStudyNotes(null)
-      activeCandidateIdRef.current = null
       setCurrentSessionIntent(null)
       setCurrentModelSelection({ modelId: '', reason: '' })
       currentModelSelectionRef.current = { modelId: '', reason: '' }
@@ -361,24 +250,6 @@ export default function App() {
         setCompanionRealtimeStatus('off')
       }
     }
-  }, [])
-
-  useEffect(() => {
-    const cleanup = window.api.onModeActive((mode) => {
-      setActiveMode(mode)
-      switch (mode) {
-        case 'interview':
-          setAnswerTab((prev) => prev === 'companion' ? 'answer' : prev)
-          break
-        case 'companion':
-          setAnswerTab('answer')
-          setAnswerTeleprompterOpen(false)
-          break
-        default:
-          setAnswerTeleprompterOpen(false)
-      }
-    })
-    return cleanup
   }, [])
 
   useEffect(() => {
@@ -493,13 +364,11 @@ export default function App() {
   const handleConfirmEnd = useCallback(async () => {
     setConfirmEndSession(false)
     try {
-      flushTranscriptWindow()
-      await window.api.setSessionNotes(meetingNotesRef.current)
       await window.api.stopSession()
     } catch (err: any) {
       setCurrentAnswer(`Error: ${err.message}`)
     }
-  }, [flushTranscriptWindow])
+  }, [])
 
   const handleCancelEnd = useCallback(() => {
     setConfirmEndSession(false)
@@ -507,34 +376,27 @@ export default function App() {
 
   const handleSessionStart = useCallback(async (ctx?: any) => {
     setShowSessionSetup(false)
-    setCurrentSessionIntent(isSessionIntent(ctx?.sessionIntent) ? ctx.sessionIntent : 'interview')
-    transcriptWindowRef.current = null
-    replaceMeetingNotes([])
-    setStudyNotes(null)
+    setCurrentSessionIntent('quick-help')
     try {
       await window.api.startSession(ctx)
     } catch (err: any) {
       setCurrentAnswer(`Error: ${err.message}`)
     }
-  }, [replaceMeetingNotes])
+  }, [])
 
   const handleSessionSkip = useCallback(async () => {
     setShowSessionSetup(false)
-    setCurrentSessionIntent('interview')
-    transcriptWindowRef.current = null
-    replaceMeetingNotes([])
-    setStudyNotes(null)
+    setCurrentSessionIntent('quick-help')
     try {
       await window.api.startSession()
     } catch (err: any) {
       setCurrentAnswer(`Error: ${err.message}`)
     }
-  }, [replaceMeetingNotes])
+  }, [])
 
   const handleCaptureScreen = useCallback(async () => {
     try {
       pendingAnswerQuestionRef.current = latestQuestionRef.current || 'Screen Analysis'
-      setAnswerTeleprompterOpen(false)
       setShowAnswerPane(true)
       setCurrentAnswer('Analyzing screen...')
       setIsAnswering(true)
@@ -548,7 +410,6 @@ export default function App() {
   const handleRegenerate = useCallback(async () => {
     pendingAnswerQuestionRef.current =
       answerHistory[historyIndex]?.question || latestQuestionRef.current || 'Current Prompt'
-    setAnswerTeleprompterOpen(false)
     setShowAnswerPane(true)
     setCurrentAnswer('Regenerating...')
     setIsAnswering(true)
@@ -557,7 +418,6 @@ export default function App() {
 
   const handleAnswerNow = useCallback(async () => {
     pendingAnswerQuestionRef.current = latestQuestionRef.current || 'Current Prompt'
-    setAnswerTeleprompterOpen(false)
     setShowAnswerPane(true)
     setCurrentAnswer((prev) => prev || 'Preparing answer...')
     setIsAnswering(true)
@@ -570,7 +430,6 @@ export default function App() {
 
   const handleAnswerForQuestion = useCallback(async (question: string) => {
     pendingAnswerQuestionRef.current = question
-    setAnswerTeleprompterOpen(false)
     setShowAnswerPane(true)
     setCurrentAnswer('Preparing answer...')
     setIsAnswering(true)
@@ -583,49 +442,12 @@ export default function App() {
     return true
   }, [])
 
-  const handleAnswerCandidate = useCallback(async (candidate: AnswerCandidate) => {
-    activeCandidateIdRef.current = candidate.id
-    setAnswerCandidates((prev) =>
-      prev.map((item) =>
-        item.id === candidate.id ? { ...item, status: 'answering' } : item
-      )
-    )
-    const queued = await handleAnswerForQuestion(candidate.text)
-    if (!queued) {
-      activeCandidateIdRef.current = null
-      setAnswerCandidates((prev) =>
-        prev.map((item) =>
-          item.id === candidate.id ? { ...item, status: 'new' } : item
-        )
-      )
-    }
-  }, [handleAnswerForQuestion])
-
-  const handleDismissCandidate = useCallback((id: string) => {
-    if (activeCandidateIdRef.current === id) activeCandidateIdRef.current = null
-    setAnswerCandidates((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: 'dismissed' } : item
-      )
-    )
-  }, [])
-
-  const handleClearDismissedCandidates = useCallback(() => {
-    setAnswerCandidates((prev) => prev.filter((item) => item.status !== 'dismissed'))
-  }, [])
-
   // Chat input routes through the active agent as a conversational turn.
   // The agent decides how to reply (bubble, open answer window, solve_with_openrouter)
   // using the full transcript thread — including prior chat messages — for context.
   const handleSendChatMessage = useCallback(async (text: string) => {
     await window.api.sendChatMessage(text)
   }, [])
-
-  const handleToggleAutoAnswers = useCallback(async () => {
-    const nextValue = !autoAnswerEnabled
-    setAutoAnswerEnabled(nextValue)
-    await window.api.setConfig({ autoAnswerEnabled: nextValue })
-  }, [autoAnswerEnabled])
 
   const handleToggleMic = useCallback(async () => {
     const nextValue = !micEnabled
@@ -693,7 +515,7 @@ export default function App() {
     .reverse()
     .find((entry) => isExternalAudioEntry(entry) && Boolean(getAnswerCandidateText(entry.text)))
   const latestQuestion =
-    interimTranscript.interviewer ||
+    interimTranscript.system ||
     detectedQuestionEntry?.text ||
     [...transcript].reverse().find((entry) => isExternalAudioEntry(entry))?.text ||
     ''
@@ -712,31 +534,7 @@ export default function App() {
   const displayedRoutingReason = isAnswering
     ? currentModelSelection.reason
     : selectedHistoryEntry?.routingReason || currentModelSelection.reason
-  const detailCapabilities = getSessionBehavior(currentSessionIntent || 'interview').detailCapabilities
-  const hasDetailCapability = (capability: string): boolean =>
-    detailCapabilities.includes(capability as any)
-  const answerTabs = [
-    hasDetailCapability('detail') ? { value: 'answer' as const, label: 'Detail', count: 0 } : null,
-    hasDetailCapability('queue')
-      ? {
-          value: 'queue' as const,
-          label: 'Queue',
-          count: answerCandidates.filter((item) => item.status === 'new').length,
-        }
-      : null,
-    hasDetailCapability('notes')
-      ? {
-          value: 'notes' as const,
-          label: currentSessionIntent === 'class' ? 'Study Notes' : 'Notes',
-          count: currentSessionIntent === 'class' ? countStudyNotes(studyNotes) : meetingNotes.length,
-        }
-      : null,
-  ].filter((tab): tab is { value: AnswerTab; label: string; count: number } => Boolean(tab))
-
-  useEffect(() => {
-    if (answerTabs.some((tab) => tab.value === answerTab)) return
-    setAnswerTab(answerTabs[0]?.value ?? 'answer')
-  }, [answerTab, answerTabs])
+  const detailCapabilities = getSessionBehavior(currentSessionIntent || 'quick-help').detailCapabilities
 
   useEffect(() => {
     latestQuestionRef.current = latestQuestion
@@ -806,14 +604,9 @@ export default function App() {
     setCurrentAttachments([])
     setAnswerHistory([])
     setHistoryIndex(-1)
-    setAnswerTeleprompterOpen(false)
     setCurrentModelSelection({ modelId: '', reason: '' })
     currentModelSelectionRef.current = { modelId: '', reason: '' }
-    setAnswerCandidates([])
-    activeCandidateIdRef.current = null
-    transcriptWindowRef.current = null
-    replaceMeetingNotes([])
-  }, [replaceMeetingNotes])
+  }, [])
 
   if (isPreviewView) {
     return (
@@ -830,99 +623,45 @@ export default function App() {
       displayedAnswer.trim().length > 0 ||
       answerHistory.length > 0
 
-    if (activeMode === 'companion' && !companionHasAnswerSurface) {
+    if (!companionHasAnswerSurface) {
       return <div className="overlay-shell h-full w-full bg-transparent p-0 text-white" />
     }
 
     return (
       <div className="overlay-shell h-full w-full bg-transparent p-0 text-white">
-        {answerTeleprompterOpen && displayedAnswer.trim() ? (
-          <AnswerTeleprompter
-            answer={displayedAnswer}
-            question={displayedQuestion}
-            isStreaming={isAnswering}
-            onExit={() => setAnswerTeleprompterOpen(false)}
-            onClose={handleHideAnswerWindow}
-          />
-        ) : (
-          <div className="flex h-full min-h-105 flex-col overflow-hidden rounded-2xl border border-white/6 bg-[rgba(10,12,16,0.92)] shadow-[0_16px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
-            <div className="drag-handle flex cursor-grab items-center justify-between border-b border-white/6 px-4 py-2 active:cursor-grabbing">
-              <div className="no-drag flex gap-1 rounded-xl bg-white/3 p-1">
-                {answerTabs.map(({ value, label, count }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setAnswerTab(value)}
-                    className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors ${
-                      answerTab === value
-                        ? 'bg-cyan-500/15 text-cyan-200'
-                        : 'text-white/35 hover:bg-white/4 hover:text-white/65'
-                    }`}
-                  >
-                    {label}
-                    {count > 0 && (
-                      <span className="ml-2 rounded-full bg-cyan-400/15 px-1.5 py-0.5 text-[10px] text-cyan-200/80">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={handleHideAnswerWindow}
-                className="no-drag rounded-lg px-2 py-1 text-[12px] text-white/35 transition-colors hover:bg-white/5 hover:text-white/70"
-                title="Close"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-hidden p-3">
-              {answerTab === 'queue' ? (
-                <AnswerQueue
-                  candidates={answerCandidates}
-                  sessionIntent={currentSessionIntent || 'interview'}
-                  onAnswer={handleAnswerCandidate}
-                  onDismiss={handleDismissCandidate}
-                  onClearDismissed={handleClearDismissedCandidates}
-                />
-              ) : answerTab === 'notes' ? (
-                <MeetingNotes
-                  notes={meetingNotes}
-                  studyNotes={studyNotes}
-                  sessionIntent={currentSessionIntent || 'interview'}
-                  onClear={() => {
-                    transcriptWindowRef.current = null
-                    replaceMeetingNotes([])
-                  }}
-                  onAnswerFollowUp={(question) => {
-                    setAnswerTab('answer')
-                    void handleAnswerForQuestion(question)
-                  }}
-                  onCopyFollowUp={(question) => window.api.copyToClipboard(question)}
-                />
-              ) : (
-                <AISuggestion
-                  answer={displayedAnswer}
-                  attachments={displayedAttachments}
-                  isStreaming={isAnswering}
-                  question={displayedQuestion}
-                  canGoBack={historyIndex > 0}
-                  canGoForward={historyIndex >= 0 && historyIndex < answerHistory.length - 1}
-                  historyLabel={answerHistory.length > 0 ? `${historyIndex + 1} / ${answerHistory.length}` : undefined}
-                  onGoBack={() => setHistoryIndex((prev) => Math.max(0, prev - 1))}
-                  onGoForward={() => setHistoryIndex((prev) => Math.min(answerHistory.length - 1, prev + 1))}
-                  onOpenTeleprompter={() => setAnswerTeleprompterOpen(true)}
-                  detailCapabilities={detailCapabilities}
-                  modelId={displayedModelId}
-                  routingReason={displayedRoutingReason}
-                  onClear={handleClearAnswers}
-                  onClose={handleHideAnswerWindow}
-                />
-              )}
-            </div>
+        <div className="flex h-full min-h-105 flex-col overflow-hidden rounded-2xl border border-white/6 bg-[rgba(10,12,16,0.92)] shadow-[0_16px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+          <div className="drag-handle flex cursor-grab items-center justify-between border-b border-white/6 px-4 py-2 active:cursor-grabbing">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-200/80">
+              Detail
+            </span>
+            <button
+              onClick={handleHideAnswerWindow}
+              className="no-drag rounded-lg px-2 py-1 text-[12px] text-white/35 transition-colors hover:bg-white/5 hover:text-white/70"
+              title="Close"
+            >
+              Close
+            </button>
           </div>
-        )}
+
+          <div className="min-h-0 flex-1 overflow-hidden p-3">
+            <AISuggestion
+              answer={displayedAnswer}
+              attachments={displayedAttachments}
+              isStreaming={isAnswering}
+              question={displayedQuestion}
+              canGoBack={historyIndex > 0}
+              canGoForward={historyIndex >= 0 && historyIndex < answerHistory.length - 1}
+              historyLabel={answerHistory.length > 0 ? `${historyIndex + 1} / ${answerHistory.length}` : undefined}
+              onGoBack={() => setHistoryIndex((prev) => Math.max(0, prev - 1))}
+              onGoForward={() => setHistoryIndex((prev) => Math.min(answerHistory.length - 1, prev + 1))}
+              detailCapabilities={detailCapabilities}
+              modelId={displayedModelId}
+              routingReason={displayedRoutingReason}
+              onClear={handleClearAnswers}
+              onClose={handleHideAnswerWindow}
+            />
+          </div>
+        </div>
       </div>
     )
   }
@@ -964,12 +703,10 @@ export default function App() {
             onCaptureScreen={handleCaptureScreen}
             onToggleMic={handleToggleMic}
             onToggleTranscript={() => setShowTranscript((prev) => !prev)}
-            onToggleAutoAnswers={handleToggleAutoAnswers}
             onToggleAnswerPane={handleToggleAnswerWindow}
             onSendQuestion={handleSendChatMessage}
             onMinimize={() => setIsMinimized(true)}
             showTranscript={showTranscript}
-            autoAnswerEnabled={autoAnswerEnabled}
             micEnabled={micEnabled}
             showAnswerPane={showAnswerPane}
             liveAgentMode={liveAgentMode}
@@ -1036,8 +773,8 @@ export default function App() {
             <Transcript
               entries={visibleTranscript}
               detectedQuestion={detectedQuestionEntry?.text}
-              sessionIntent={currentSessionIntent || 'interview'}
-              interviewerInterimText={interimTranscript.interviewer}
+              sessionIntent={currentSessionIntent || 'quick-help'}
+              systemInterimText={interimTranscript.system}
               userInterimText={interimTranscript.user}
               onAnswerThis={() => {
                 if (detectedQuestionEntry?.text) {
@@ -1045,9 +782,8 @@ export default function App() {
                 }
               }}
               onClear={() => {
-                transcriptWindowRef.current = null
                 setTranscript([])
-                setInterimTranscript({ interviewer: '', user: '' })
+                setInterimTranscript({ system: '', user: '' })
               }}
               onHide={() => setShowTranscript(false)}
             />
@@ -1095,7 +831,7 @@ function getAnswerCandidateText(text: string): string | null {
     return cleanCandidateText(text)
   }
 
-  const meetingPromptPatterns = [
+  const promptPatterns = [
     /\b(can|could) someone\b/,
     /\bdoes anyone\b/,
     /\bthe question is\b/,
@@ -1112,80 +848,13 @@ function getAnswerCandidateText(text: string): string | null {
     /\bsolve\b/,
   ]
 
-  return meetingPromptPatterns.some((pattern) => pattern.test(normalized))
+  return promptPatterns.some((pattern) => pattern.test(normalized))
     ? cleanCandidateText(text)
     : null
 }
 
-function appendTranscriptWindow(
-  current: TranscriptWindow | null,
-  entry: TranscriptEntry
-): { ready: TranscriptWindow | null; current: TranscriptWindow | null } {
-  const nextPiece = cleanTranscriptPiece(entry.text)
-  if (!nextPiece) return { ready: null, current }
-
-  const speaker = entry.speaker === 'unknown' ? 'unknown' : 'external'
-  const timestamp = entry.timestamp || Date.now()
-  const gapMs = current ? timestamp - current.lastTimestamp : 0
-
-  if (!current || current.speaker !== speaker || gapMs > 6500) {
-    return {
-      ready: current && transcriptWindowWords(current.text) >= 8 ? current : null,
-      current: createTranscriptWindow(entry, speaker, nextPiece, timestamp),
-    }
-  }
-
-  const merged: TranscriptWindow = {
-    ...current,
-    text: `${current.text} ${nextPiece}`.replace(/\s+/g, ' ').trim(),
-    lastTimestamp: timestamp,
-    entryCount: current.entryCount + 1,
-  }
-
-  if (shouldFlushTranscriptWindow(merged, nextPiece)) {
-    return { ready: merged, current: null }
-  }
-
-  return { ready: null, current: merged }
-}
-
-function createTranscriptWindow(
-  entry: TranscriptEntry,
-  speaker: TranscriptWindow['speaker'],
-  text: string,
-  timestamp: number
-): TranscriptWindow {
-  return {
-    id: entry.id || `${timestamp}:${text}`,
-    text,
-    speaker,
-    timestamp,
-    lastTimestamp: timestamp,
-    entryCount: 1,
-  }
-}
-
-function shouldFlushTranscriptWindow(window: TranscriptWindow, latestPiece: string): boolean {
-  const words = transcriptWindowWords(window.text)
-  if (words >= 42) return true
-  if (words >= 14 && /[.!?]$/.test(latestPiece.trim())) return true
-  if (words >= 8 && latestPiece.trim().endsWith('?')) return true
-  return false
-}
-
-function transcriptWindowToEntry(window: TranscriptWindow): TranscriptEntry {
-  return {
-    id: window.id,
-    text: window.text,
-    speaker: window.speaker === 'external' ? 'interviewer' : 'unknown',
-    audioSource: window.speaker === 'external' ? 'system' : undefined,
-    timestamp: window.timestamp,
-    isFinal: true,
-  }
-}
-
-function getInterimTranscriptBucket(entry: TranscriptEntry): 'interviewer' | 'user' {
-  return isExternalAudioEntry(entry) ? 'interviewer' : 'user'
+function getInterimTranscriptBucket(entry: TranscriptEntry): 'system' | 'user' {
+  return isExternalAudioEntry(entry) ? 'system' : 'user'
 }
 
 function transcriptWindowWords(text: string): number {
@@ -1203,134 +872,6 @@ function cleanCandidateText(text: string): string {
     .trim()
 }
 
-function getMeetingNoteText(text: string): string | null {
-  const cleaned = text.replace(/\s+/g, ' ').trim()
-  const normalized = cleaned.toLowerCase()
-  if (!normalized) return null
-  if (normalized.endsWith('?')) return null
-
-  const words = normalized.split(/\s+/).filter(Boolean)
-  if (words.length < 10) return null
-  if (words.length > 90) return null
-  if (/[,:;]$/.test(cleaned)) return null
-  if (/\b(?:and|or|to|with|because|if|the|a|an|of|for|from|that|this)$/.test(normalized)) return null
-  if (/^(?:and|but|because|to|then|with|or)\b/.test(normalized)) return null
-
-  const fillerPhrases = [
-    'got it', 'sounds good', 'perfect', 'alright', 'okay',
-    'good answer', 'great answer', 'nice work', 'thanks',
-    'thank you', 'i see', 'that makes sense', 'interesting',
-    'one moment', 'let me check', 'moving on', 'next question',
-    'super fun', 'too easy', 'come on', 'fingers crossed',
-    'i know it is super sad', 'also this is the last week',
-  ]
-  if (fillerPhrases.some((phrase) => normalized.startsWith(phrase))) return null
-
-  const offTopicPatterns = [
-    /\b(?:jersey shore|trash italiano|heartbroken|thank you everybody|bye bye)\b/,
-    /\b(?:last week that you'll have with me|start teaching my own class)\b/,
-  ]
-  if (offTopicPatterns.some((pattern) => pattern.test(normalized))) return null
-
-  const notePatterns = [
-    /\bwe (?:discussed|learned|covered|decided|agreed|reviewed|talked about)\b/,
-    /\b(?:key point|main idea|takeaway|important|remember|note that)\b/,
-    /\b(?:definition|concept|lesson|topic|agenda|action item|next step)\b/,
-    /\b(?:means|refers to|is used for|works by|depends on|because|therefore)\b/,
-    /\bthe difference between\b/,
-    /\b(?:javascript|jsx|react|vite|npm|package|dependency|terminal|component|props|return|curly braces|variable shadowing|source of truth|confetti|react-use|react confetti)\b/,
-    /\b(?:you have to|you need to|you should|don't forget|keep that in mind)\b/,
-    /\b(?:is|are|was|were) (?:a|an|the|used|when|where|how|why)\b/,
-    /\b(?:causes|requires|allows|helps|prevents|includes|supports|explains)\b/,
-  ]
-
-  return notePatterns.some((pattern) => pattern.test(normalized))
-    ? cleanMeetingNoteText(cleaned)
-    : null
-}
-
-function cleanMeetingNoteText(text: string): string {
-  return text
-    .replace(/^(?:so|okay|alright|basically|right),?\s+/i, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function addAnswerCandidate(
-  candidates: AnswerCandidate[],
-  entry: TranscriptEntry,
-  text: string
-): AnswerCandidate[] {
-  const normalizedText = normalizeCandidateText(text)
-  if (!normalizedText) return candidates
-  const existing = candidates.find((candidate) => normalizeCandidateText(candidate.text) === normalizedText)
-  if (existing) return candidates
-
-  const next: AnswerCandidate = {
-    id: entry.id || `${entry.timestamp}:${normalizedText}`,
-    text,
-    speaker: entry.speaker === 'unknown' ? 'speaker' : entry.speaker,
-    timestamp: entry.timestamp || Date.now(),
-    status: 'new',
-  }
-  return [...candidates, next].slice(-30)
-}
-
-function addMeetingNote(
-  notes: MeetingNote[],
-  entry: TranscriptEntry,
-  text: string
-): MeetingNote[] {
-  const normalizedText = normalizeCandidateText(text)
-  if (!normalizedText) return notes
-  const existing = notes.find((note) => normalizeCandidateText(note.text) === normalizedText)
-  if (existing) return notes
-
-  const next: MeetingNote = {
-    id: `note:${entry.id || `${entry.timestamp}:${normalizedText}`}`,
-    text,
-    speaker: entry.speaker === 'unknown' ? 'speaker' : entry.speaker,
-    timestamp: entry.timestamp || Date.now(),
-    followUp: buildFollowUpQuestion(text),
-  }
-
-  return [...notes, next].slice(-50)
-}
-
-function buildFollowUpQuestion(text: string): string {
-  const normalized = text.trim().replace(/\s+/g, ' ')
-  const shortTopic = trimFollowUpTopic(normalized)
-  const lower = normalized.toLowerCase()
-
-  if (/\b(?:decided|agreed|action item|next step)\b/.test(lower)) {
-    return `What are the next steps, owners, or risks for ${shortTopic}?`
-  }
-
-  if (/\bthe difference between\b/.test(lower)) {
-    return `Can you compare the practical tradeoffs in ${shortTopic}?`
-  }
-
-  if (/\b(?:because|means|refers to|is used for|works by|depends on)\b/.test(lower)) {
-    return `Can you give a concrete example of ${shortTopic}?`
-  }
-
-  if (/\bwe (?:discussed|learned|covered|reviewed|talked about)\b/.test(lower)) {
-    return `What is the key takeaway from ${shortTopic}?`
-  }
-
-  return `Can you expand on ${shortTopic}?`
-}
-
-function trimFollowUpTopic(text: string): string {
-  const withoutLeadIn = text
-    .replace(/^(so|okay|alright|basically|in short),?\s+/i, '')
-    .replace(/\.$/, '')
-    .trim()
-
-  if (withoutLeadIn.length <= 120) return withoutLeadIn
-  return `${withoutLeadIn.slice(0, 117).trim()}...`
-}
-
 function normalizeCandidateText(text: string): string {
   return text
     .trim()
@@ -1339,53 +880,6 @@ function normalizeCandidateText(text: string): string {
     .replace(/\s+/g, ' ')
 }
 
-function countStudyNotes(snapshot: StudyNotesSnapshot | null): number {
-  if (!snapshot) return 0
-  return Object.values(snapshot.sections).reduce((sum, bullets) => sum + bullets.length, 0)
-}
-
 function isSessionIntent(value: unknown): value is SessionIntent {
-  return value === 'interview' ||
-    value === 'meeting' ||
-    value === 'presentation' ||
-    value === 'class' ||
-    value === 'quick-help'
-}
-
-function shouldAutoOpenAnswerTeleprompter(
-  question: string,
-  answer: string,
-  sessionIntent: SessionIntent | null
-): boolean {
-  if (sessionIntent !== 'interview') return false
-
-  const normalizedQuestion = question.trim().toLowerCase()
-  const normalizedAnswer = answer.trim().toLowerCase()
-  if (!normalizedQuestion || !normalizedAnswer) return false
-  if (normalizedAnswer.includes('```')) return false
-
-  const detailedTaskPatterns = [
-    /\b(screen|screenshot|capture|visible|see on|look at)\b/,
-    /\b(code|debug|bug|error|stack trace|terminal|command|shell|powershell)\b/,
-    /\b(write|edit|create|update|modify|refactor|implement|fix)\b.*\b(file|code|component|function|class|app)\b/,
-    /\b(analy[sz]e|analysis|solve|calculate|proof|derive|compare|table)\b/,
-  ]
-  if (detailedTaskPatterns.some((pattern) => pattern.test(normalizedQuestion))) {
-    return false
-  }
-
-  const spokenInterviewPatterns = [
-    /\btell me about\b/,
-    /\bwalk me through\b/,
-    /\bdescribe\b/,
-    /\bexplain\b/,
-    /\bwhy (?:do|did|are|were|would)\b/,
-    /\bwhat (?:is|are|was|were|would|makes|motivates)\b/,
-    /\bhow (?:do|did|would|have|are)\b/,
-    /\bcan you\b/,
-    /\bcould you\b/,
-    /\bgive me an example\b/,
-  ]
-
-  return spokenInterviewPatterns.some((pattern) => pattern.test(normalizedQuestion))
+  return value === 'quick-help'
 }

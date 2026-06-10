@@ -36,7 +36,7 @@ export default function AudioCapture({ micEnabled }: AudioCaptureProps) {
   }, [])
 
   const setupAudioProcessing = useCallback(
-    (stream: MediaStream, sourceType: 'interviewer' | 'user', target: { current: CaptureNodes }) => {
+    (stream: MediaStream, sourceType: 'system' | 'user', target: { current: CaptureNodes }) => {
       cleanupNodes(target)
       target.current.stream = stream
 
@@ -109,7 +109,7 @@ export default function AudioCapture({ micEnabled }: AudioCaptureProps) {
         }
 
         console.log('[AudioCapture] System audio capture started via getDisplayMedia')
-        setupAudioProcessing(stream, 'interviewer', systemRefs)
+        setupAudioProcessing(stream, 'system', systemRefs)
       } catch (err) {
         console.error('[AudioCapture] getDisplayMedia failed:', err)
       }

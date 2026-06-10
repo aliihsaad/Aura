@@ -57,7 +57,6 @@ export default function CompanionSetup({
       sessionIntent: 'quick-help',
       companyName,
       roleName,
-      interviewType: 'general',
       subject,
       sessionNotes,
     })
@@ -68,7 +67,6 @@ export default function CompanionSetup({
       sessionIntent: 'quick-help',
       companyName,
       roleName,
-      interviewType: 'general',
       subject,
       sessionNotes,
     })

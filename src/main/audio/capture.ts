@@ -3,7 +3,7 @@ import { EventEmitter } from 'events'
 /**
  * System audio capture using WASAPI loopback on Windows.
  *
- * This captures the audio output of the system (what the interviewer says)
+ * This captures the audio output of the system (what the speaker says)
  * so it can be sent to Deepgram for real-time transcription.
  *
  * Implementation options (in priority order):
@@ -36,7 +36,7 @@ export class AudioCaptureService extends EventEmitter {
    * The renderer captures audio via desktopCapturer + AudioWorklet
    * and sends PCM chunks to main via IPC.
    */
-  processAudioChunk(source: 'interviewer' | 'user', chunk: Buffer): void {
+  processAudioChunk(source: 'system' | 'user', chunk: Buffer): void {
     if (!this.isCapturing) return
     this.emit('audio-data', { source, chunk })
   }

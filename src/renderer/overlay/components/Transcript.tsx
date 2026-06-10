@@ -12,7 +12,7 @@ import { getTranscriptSpeakerLabel } from '@shared/session-intent-policy'
 interface TranscriptEntry {
   id: string
   text: string
-  speaker: 'interviewer' | 'user' | 'unknown'
+  speaker: 'system' | 'user' | 'unknown'
   timestamp: number
   isFinal: boolean
   source?: 'stt' | 'chat'
@@ -23,7 +23,7 @@ interface TranscriptProps {
   entries: TranscriptEntry[]
   detectedQuestion?: string
   sessionIntent: SessionIntent
-  interviewerInterimText: string
+  systemInterimText: string
   userInterimText: string
   onAnswerThis: () => void
   onClear: () => void
@@ -34,7 +34,7 @@ export default function Transcript({
   entries,
   detectedQuestion,
   sessionIntent,
-  interviewerInterimText,
+  systemInterimText,
   userInterimText,
   onAnswerThis,
   onClear,
@@ -56,11 +56,11 @@ export default function Transcript({
       isChat: entry.source === 'chat',
     }))
 
-    if (interviewerInterimText.trim()) {
+    if (systemInterimText.trim()) {
       finalRows.push({
-        id: 'interviewer-interim',
-        text: interviewerInterimText,
-        speaker: 'interviewer' as const,
+        id: 'system-interim',
+        text: systemInterimText,
+        speaker: 'system' as const,
         source: 'stt' as const,
         audioSource: 'system' as const,
         isInterim: true,
@@ -83,7 +83,7 @@ export default function Transcript({
     }
 
     return finalRows.slice(-12)
-  }, [detectedQuestion, entries, interviewerInterimText, userInterimText])
+  }, [detectedQuestion, entries, systemInterimText, userInterimText])
 
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
@@ -96,7 +96,7 @@ export default function Transcript({
 
   // Compact (strip) mode — show latest 1-2 lines
   if (!expanded) {
-    const hasContent = latestText || interviewerInterimText || userInterimText
+    const hasContent = latestText || systemInterimText || userInterimText
     return (
       <div className="flex items-center gap-0 rounded-2xl border border-white/[0.06] bg-[rgba(12,14,18,0.82)] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
         {/* Transcript text area */}

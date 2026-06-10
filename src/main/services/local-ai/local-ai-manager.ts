@@ -53,7 +53,7 @@ export class LocalAiManager {
   }
 
   createWhisperSttService(
-    speaker: 'interviewer' | 'user',
+    speaker: 'system' | 'user',
     language: string,
     keyterms: string[] = []
   ): WhisperCppSttService {

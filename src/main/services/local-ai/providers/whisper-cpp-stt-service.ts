@@ -44,7 +44,7 @@ export class WhisperCppSttService extends STTService {
 
   constructor(
     private readonly modelPackStore: ModelPackStore,
-    private readonly whisperSpeaker: 'interviewer' | 'user',
+    private readonly whisperSpeaker: 'system' | 'user',
     private readonly whisperLanguage: string = 'en',
     _keyterms: string[] = [],
     private readonly runtimeOverride?: WhisperRuntimeOverride

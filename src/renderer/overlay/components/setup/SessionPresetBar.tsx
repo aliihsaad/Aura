@@ -4,7 +4,7 @@ import type { SessionPreset } from '@shared/types'
 
 interface SessionPresetBarProps {
   /** Active mode in the wizard. Save-button captures this with the form state. */
-  agentMode: 'interview' | 'companion'
+  agentMode: 'companion'
   /** Snapshot of the current child form, gathered when the user clicks Save. */
   getCurrentContext: () => SessionPreset['context']
   /** Called after a preset is applied. Parent should adopt the agentMode and

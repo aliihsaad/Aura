@@ -65,9 +65,9 @@ export class EntityExtractionService {
       candidates.push(this.buildCandidate('topic', roleName, memory, `Role referenced by memory "${memory.title}".`))
     }
 
-    const interviewType = readMetadataString(metadata.interviewType)
-    if (interviewType) {
-      candidates.push(this.buildCandidate('routine', formatRoutineName(interviewType), memory, `Routine context inferred from ${interviewType} capture.`))
+    const sessionType = readMetadataString(metadata.sessionType)
+    if (sessionType) {
+      candidates.push(this.buildCandidate('routine', formatRoutineName(sessionType), memory, `Routine context inferred from ${sessionType} capture.`))
     }
 
     for (const tool of TOOL_KEYWORDS) {
@@ -130,9 +130,9 @@ function readMetadataString(value: string | number | boolean | null | undefined)
   return normalized || undefined
 }
 
-function formatRoutineName(interviewType: string): string {
-  const compact = interviewType.replace(/[-_]+/g, ' ').trim()
-  return `${compact.charAt(0).toUpperCase()}${compact.slice(1)} interview`
+function formatRoutineName(sessionType: string): string {
+  const compact = sessionType.replace(/[-_]+/g, ' ').trim()
+  return `${compact.charAt(0).toUpperCase()}${compact.slice(1)} session`
 }
 
 function includesToken(text: string, token: string): boolean {
