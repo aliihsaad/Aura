@@ -4,6 +4,7 @@ import { DEFAULT_FREELLMAPI_BASE_URL } from '@shared/constants'
 import { Eye, EyeOff, Check, SlidersHorizontal, Cpu, Shield, ToggleLeft, ToggleRight, Code, ExternalLink, Brain, Radio, Wrench } from 'lucide-react'
 import type { AgentToolInfo } from '@shared/types'
 import LocalAiSettings from './LocalAiSettings'
+import VaultSyncSettings from './VaultSyncSettings'
 
 const inputClass =
   'input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-4 py-2.5 text-[13px] text-white/80 placeholder:text-white/15 focus:border-cyan-500/25 focus:outline-none transition-all font-mono tracking-wide'
@@ -576,6 +577,9 @@ export default function ApiConfig() {
           )}
         </div>
       </div>
+
+      {/* Memory & Sync — Vault MCP connections */}
+      <VaultSyncSettings />
 
       {/* Agent Behavior */}
       <div>

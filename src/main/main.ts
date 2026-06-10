@@ -2,7 +2,7 @@ import { app, globalShortcut, Tray, Menu, nativeImage, session, desktopCapturer 
 import { join } from 'path'
 import * as dotenv from 'dotenv'
 import { createOverlayWindow, createAnswerWindow, createSettingsWindow, createPreviewWindow, createCanvasWindow, toggleOverlay, hideOverlay, getOverlayWindow, getSettingsWindow, markAppQuitting, quitApp } from './windows'
-import { setupIpcHandlers } from './ipc-handlers'
+import { setupIpcHandlers, startVaultMcp, shutdownVaultMcp } from './ipc-handlers'
 import { checkForUpdates } from './services/update-checker'
 import { DEFAULT_SHORTCUTS } from '@shared/constants'
 
@@ -35,6 +35,12 @@ app.whenReady().then(() => {
 
   // Setup IPC handlers
   setupIpcHandlers()
+
+  // Connect Vault MCP servers in the background — the app never waits on
+  // them and boots identically when they are absent.
+  void startVaultMcp().catch((err) => {
+    console.warn('[MCP] startup connect failed:', err)
+  })
 
   // Register global shortcuts
   globalShortcut.register(DEFAULT_SHORTCUTS.toggleOverlay, () => {
@@ -107,8 +113,27 @@ function createTray(): void {
   tray.setContextMenu(contextMenu)
 }
 
-app.on('before-quit', () => {
+let vaultMcpShutdownDone = false
+
+app.on('before-quit', (event) => {
   markAppQuitting()
+  // Disconnect the vault-collab presence session cleanly before exit, with a
+  // hard 2.5s cap so a hung server can never block quitting.
+  if (!vaultMcpShutdownDone) {
+    event.preventDefault()
+    const finish = (): void => {
+      if (vaultMcpShutdownDone) return
+      vaultMcpShutdownDone = true
+      app.quit()
+    }
+    const failsafe = setTimeout(finish, 2500)
+    void shutdownVaultMcp()
+      .catch(() => undefined)
+      .finally(() => {
+        clearTimeout(failsafe)
+        finish()
+      })
+  }
 })
 
 app.on('will-quit', () => {

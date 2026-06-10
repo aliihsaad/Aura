@@ -22,6 +22,8 @@ export class SessionRuntimeStore {
   currentFileContext = ''
   currentSttKeyterms: string[] = []
   currentSessionRecallContext = ''
+  /** Cross-session context pulled from Vault (vault_recall_context) at session start. */
+  vaultRecallContext = ''
   lastAnswerRecallContext = ''
   lastAnswerRecallQuestion = ''
   lastScreenshotRecallContext = ''
@@ -51,6 +53,7 @@ export class SessionRuntimeStore {
     this.lastRequestedQuestion = prepared.lastRequestedQuestion
     this.currentFileContext = prepared.fileContext
     this.currentSessionRecallContext = prepared.sessionRecallContext
+    this.vaultRecallContext = ''
     this.lastAnswerRecallContext = prepared.lastAnswerRecallContext
     this.lastAnswerRecallQuestion = prepared.lastAnswerRecallQuestion
     this.lastScreenshotRecallContext = prepared.lastScreenshotRecallContext

@@ -25,6 +25,10 @@ export interface SessionBrainDeps {
   config: BrainConfig
   recordUsage?: (model: string, promptTokens: number, completionTokens: number) => void
   onStudyNotesSnapshot?: (snapshot: StudyNotesSnapshot) => void
+  /** Cross-session context recalled from Vault (vault_recall_context) at
+   * session start — woven into the brain's context snapshot so answers and
+   * realtime reconnects keep cross-session continuity. */
+  getVaultRecallContext?: () => string
 }
 
 export class SessionBrainService {
@@ -309,6 +313,13 @@ export class SessionBrainService {
       summaryTail = lines.slice(-80).join('\n')
     } catch {
       summaryTail = ''
+    }
+
+    const vaultRecall = this.deps.getVaultRecallContext?.() ?? ''
+    if (vaultRecall.trim()) {
+      summaryTail = summaryTail.trim()
+        ? `${vaultRecall.trim()}\n\n${summaryTail}`
+        : vaultRecall.trim()
     }
 
     const indexFile = path.join(this.deps.contextManager.brainScreenshotsFolderPath(this.sessionFolderName), 'index.json')

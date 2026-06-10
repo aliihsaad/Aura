@@ -460,6 +460,9 @@ interface ToolExecutorDeps {
   sessionFolderName?: string
   getInterruptionPolicy?: () => InterruptionPolicy
   getLastEventTimestamp?: () => number
+  /** Routes bridged Vault MCP tools (vault_memory_* / vault_collab_*) to the
+   * MCP client manager. Absent when MCP integration is unavailable. */
+  callVaultTool?: (name: string, args: Record<string, any>) => Promise<string>
 }
 
 // ── Factory ───────────────────────────────────────────────────────────────────
@@ -511,6 +514,12 @@ export function createToolExecutor(deps: ToolExecutorDeps): ToolExecutorFn {
         case 'search_artifacts':
           return await executeSearchArtifacts(deps, args)
         default:
+          if (
+            deps.callVaultTool &&
+            (name.startsWith('vault_memory_') || name.startsWith('vault_collab_'))
+          ) {
+            return await deps.callVaultTool(name, args)
+          }
           return `Unknown tool: "${name}". No action was taken.`
       }
     } catch (error) {

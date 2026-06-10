@@ -140,6 +140,9 @@ import {
   WIDGET_DEFAULTS,
 } from '@shared/constants'
 import { SessionBrainService } from './services/agent/session-brain-service'
+import { McpClientManager, resolveVaultServerConfigs } from './services/mcp/mcp-client-manager'
+import { AuraCollabSession } from './services/mcp/aura-collab-session'
+import { buildVaultRecallContext, saveVaultSessionMemory } from './services/mcp/vault-session-memory'
 import { AgentEngine, AgentMode, PersonalityPreset, InterruptionPolicy } from '@shared/types'
 import { KernelChannels, ModeChannels } from '@shared/ipc-channels'
 import ElectronStore from 'electron-store'
@@ -153,6 +156,61 @@ const sessionStore = new Store({
     sessions: [] as SessionRecord[],
   },
 })
+
+// ── Vault MCP integration (Phase 2) ──────────────────────────────
+// Aura as an MCP client of the two Vault stdio servers. Both connections are
+// strictly optional: every consumer checks isConnected() and degrades.
+
+const vaultMcpManager = new McpClientManager(
+  resolveVaultServerConfigs({
+    memoryCommand: (configStore.get('vaultMemoryMcpCommand', '') as string) || undefined,
+    memoryArgs: (configStore.get('vaultMemoryMcpArgs', null) as string[] | null) || undefined,
+    collabCommand: (configStore.get('vaultCollabMcpCommand', '') as string) || undefined,
+    collabArgs: (configStore.get('vaultCollabMcpArgs', null) as string[] | null) || undefined,
+  }),
+  {
+    vault_memory: configStore.get('vaultMemoryEnabled', true) as boolean,
+    vault_collab: configStore.get('vaultCollabEnabled', true) as boolean,
+  }
+)
+
+const auraCollabSession = new AuraCollabSession({
+  manager: vaultMcpManager,
+  isEnabled: () => configStore.get('vaultCollabEnabled', true) as boolean,
+  getWorkspacePath: () => app.getAppPath(),
+})
+
+/** Called from main.ts after window/IPC setup. Never blocks app readiness. */
+export async function startVaultMcp(): Promise<void> {
+  await vaultMcpManager.connectAll()
+  await auraCollabSession.start()
+}
+
+/** Called from main.ts on quit — clean collab disconnect, then transports. */
+export async function shutdownVaultMcp(): Promise<void> {
+  await auraCollabSession.stop()
+  await vaultMcpManager.disconnectAll()
+}
+
+function getVaultDisabledTools(): string[] {
+  const raw = configStore.get('vaultDisabledTools', [] as string[])
+  return Array.isArray(raw) ? raw.map(String) : []
+}
+
+/** Bridged Vault tool definitions minus the ones toggled off in Settings. */
+function getEnabledVaultToolDefinitions(): ToolDefinition[] {
+  const disabled = new Set(getVaultDisabledTools())
+  return vaultMcpManager
+    .getBridgedToolDefinitions()
+    .filter((def) => !disabled.has(def.function.name))
+}
+
+async function callVaultToolGuarded(name: string, args: Record<string, any>): Promise<string> {
+  if (getVaultDisabledTools().includes(name)) {
+    return `Tool "${name}" is disabled in Settings → Memory & Sync.`
+  }
+  return vaultMcpManager.callBridgedTool(name, args)
+}
 
 // ── Secure key storage helpers ───────────────────────────────────
 // Uses Electron safeStorage (DPAPI on Windows) to encrypt API keys at rest.
@@ -376,6 +434,7 @@ const heartbeatService: HeartbeatService = new HeartbeatService({
   memoryStore,
   widgetManager,
   getSessionContext: () => contextManager.getSessionContext(),
+  getVaultRecallContext: () => sessionRuntimeStore.vaultRecallContext,
   getProfile: () => contextManager.getProfile(),
   getProfileMd: () => readProfileMdRaw(),
   getVoiceMd: () => readVoiceMdRaw(),
@@ -393,6 +452,7 @@ const heartbeatService: HeartbeatService = new HeartbeatService({
   getToolDefinitions: () => [
     ...TOOL_DEFINITIONS,
     ...getEnabledLiveAgentExtraToolDefinitions(),
+    ...getEnabledVaultToolDefinitions(),
   ],
   getToolExecutor: () => buildSharedToolExecutor(),
   getOverlayWindow,
@@ -530,6 +590,7 @@ function buildRealtimeCompanionInstructions(): string {
     line('Company', session.companyName),
     line('Role', session.roleName),
     line('Session notes', session.sessionNotes),
+    sessionRuntimeStore.vaultRecallContext.trim(),
   ].filter(Boolean).join('\n')
 }
 
@@ -557,6 +618,7 @@ function buildSharedToolExecutor() {
     sessionFolderName: sessionRuntimeStore.currentSessionFolderName || undefined,
     getInterruptionPolicy: () => heartbeatService.getInterruptionPolicy(),
     getLastEventTimestamp: () => lastSessionActivityAt,
+    callVaultTool: callVaultToolGuarded,
   })
 }
 
@@ -1808,6 +1870,13 @@ export function setupIpcHandlers(): void {
       modeConfig.updateModeScopedConfigFromFlatPatch({ heartbeatEnabled: true })
     }
 
+    // Cross-session recall from Vault, before the brain/heartbeat run their
+    // first tick. One call per session; '' when vault-memory is offline.
+    sessionRuntimeStore.vaultRecallContext = await buildVaultRecallContext(
+      vaultMcpManager,
+      sessionCtx ?? contextManager.getSessionContext()
+    )
+
     const brainEnabled = configStore.get('brainEnabled', DEFAULT_BRAIN_CONFIG.brainEnabled) as boolean
     const canStartSessionBrain = Boolean(getOpenRouterApiKey())
     if (brainEnabled && !canStartSessionBrain) {
@@ -1835,6 +1904,7 @@ export function setupIpcHandlers(): void {
           sendToOverlay(IPC.STUDY_NOTES_UPDATE, snapshot)
           sendToAnswer(IPC.STUDY_NOTES_UPDATE, snapshot)
         },
+        getVaultRecallContext: () => sessionRuntimeStore.vaultRecallContext,
       })
       try {
         await brain.start({
@@ -1911,15 +1981,27 @@ export function setupIpcHandlers(): void {
     sessionRuntimeStore.currentAgentEngine = 'default'
 
     let finalStudyNotes: StudyNotesSnapshot | null = null
+    let brainFinalSummary = ''
     if (sessionRuntimeStore.sessionBrain) {
       try {
         await sessionRuntimeStore.sessionBrain.stop()
         finalStudyNotes = sessionRuntimeStore.sessionBrain.readStudyNotesSnapshot()
+        brainFinalSummary = sessionRuntimeStore.sessionBrain.getSummary()
       } catch (err) {
         console.error('[SessionBrain] stop failed:', err)
       }
       sessionRuntimeStore.sessionBrain = null
     }
+
+    // Fire-and-forget Vault save — session summary (brain markdown when
+    // available, closing transcript excerpt otherwise). Never blocks stop.
+    void saveVaultSessionMemory(vaultMcpManager, {
+      subject: contextManager.getSessionContext().subject || '',
+      summaryMarkdown: brainFinalSummary,
+      startedAt: sessionRuntimeStore.currentSessionStartTime,
+      endedAt: preparedSessionStop.stoppedAt,
+      transcript: [...sessionRuntimeStore.sessionTranscript],
+    })
 
     const sessionStopTelemetryCounts = {
       transcriptCount: sessionRuntimeStore.sessionTranscript.length,
@@ -2448,6 +2530,77 @@ export function setupIpcHandlers(): void {
   })
 
   // ── Config ───────────────────────────────────────────────────
+  // ── Vault MCP bridge (Phase 2) ─────────────────────────────────
+  ipcMain.handle('vault:memory:recall', async (_event, topic?: string) => {
+    const base = contextManager.getSessionContext()
+    const context = await buildVaultRecallContext(vaultMcpManager, {
+      ...base,
+      subject: topic?.trim() || base.subject,
+    })
+    return { success: true, connected: vaultMcpManager.isConnected('vault_memory'), context }
+  })
+
+  ipcMain.handle('vault:memory:save', async (_event, payload: Record<string, any>) => {
+    const title = String(payload?.title ?? '').trim()
+    const content = String(payload?.content ?? '').trim()
+    if (!title && !content) {
+      return { success: false, error: 'Nothing to save — provide a title or content.' }
+    }
+    try {
+      const result = await vaultMcpManager.callTool('vault_memory', 'vault_save_memory', {
+        title: title || `Aura note (${new Date().toISOString().slice(0, 10)})`,
+        project: 'aura-desktop',
+        memory_type: 'reference',
+        subject: String(payload?.subject ?? '').trim() || title || 'Aura note',
+        summary: String(payload?.summary ?? '').trim() || content.slice(0, 300) || title,
+        content: content || undefined,
+        tags: ['aura-manual-save'],
+        source_app: 'other',
+      })
+      console.log('[VaultMemory] manual save via IPC completed.')
+      return { success: true, result }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  ipcMain.handle('vault:collab:status', async () => auraCollabSession.getStatus())
+
+  ipcMain.handle('vault:collab:drain', async () => {
+    try {
+      return { success: true, ...(await auraCollabSession.drain()) }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  // Settings panel feed: connection states + the bridged tool list with
+  // per-tool enable flags (vaultDisabledTools).
+  ipcMain.handle('vault:mcp:status', async () => {
+    const snapshot = vaultMcpManager.getStatusSnapshot()
+    const disabled = new Set(getVaultDisabledTools())
+    const tools = (['vault_memory', 'vault_collab'] as const).flatMap((namespace) =>
+      vaultMcpManager.getAvailableTools(namespace).map((tool) => ({
+        namespace,
+        name: tool.bridgedName,
+        description: tool.description,
+        enabled: !disabled.has(tool.bridgedName),
+      }))
+    )
+    return {
+      vaultMemory: {
+        ...snapshot.vault_memory,
+        enabled: configStore.get('vaultMemoryEnabled', true) as boolean,
+      },
+      vaultCollab: {
+        ...snapshot.vault_collab,
+        enabled: configStore.get('vaultCollabEnabled', true) as boolean,
+        sessionUid: auraCollabSession.getStatus().sessionUid,
+      },
+      tools,
+    }
+  })
+
   ipcMain.handle(IPC.GET_CONFIG, async () => {
     const modes = modeConfig.readModeScopedConfig()
     const activeMode = currentAgentMode()
@@ -2494,6 +2647,9 @@ export function setupIpcHandlers(): void {
       brainVisionModel: configStore.get('brainVisionModel', DEFAULT_BRAIN_CONFIG.brainVisionModel) as string,
       brainScreenshotIntervalMs: configStore.get('brainScreenshotIntervalMs', DEFAULT_BRAIN_CONFIG.brainScreenshotIntervalMs) as number,
       localAi: readLocalAiConfig(),
+      vaultMemoryEnabled: configStore.get('vaultMemoryEnabled', true) as boolean,
+      vaultCollabEnabled: configStore.get('vaultCollabEnabled', true) as boolean,
+      vaultDisabledTools: getVaultDisabledTools(),
     }
   })
 
@@ -2517,6 +2673,7 @@ export function setupIpcHandlers(): void {
       'activeMode',
       'brainEnabled', 'brainModel', 'brainVisionModel', 'brainScreenshotIntervalMs',
       'localAi',
+      'vaultMemoryEnabled', 'vaultCollabEnabled', 'vaultDisabledTools',
     ])
     for (const [key, value] of Object.entries(config)) {
       if (!ALLOWED_CONFIG_KEYS.has(key)) continue
@@ -2556,6 +2713,20 @@ export function setupIpcHandlers(): void {
     }
     if (config.sessionHeartbeatEnabled !== undefined) {
       heartbeatService.setProactiveEnabled(Boolean(config.sessionHeartbeatEnabled))
+    }
+    if (config.vaultMemoryEnabled !== undefined) {
+      void vaultMcpManager.setEnabled('vault_memory', Boolean(config.vaultMemoryEnabled))
+    }
+    if (config.vaultCollabEnabled !== undefined) {
+      if (config.vaultCollabEnabled) {
+        void vaultMcpManager
+          .setEnabled('vault_collab', true)
+          .then(() => auraCollabSession.start())
+      } else {
+        void auraCollabSession
+          .stop()
+          .then(() => vaultMcpManager.setEnabled('vault_collab', false))
+      }
     }
     if (config.heartbeatIntervalMs !== undefined) {
       heartbeatService.setIntervalMs(Number(config.heartbeatIntervalMs))
@@ -3078,6 +3249,7 @@ async function generateAnswer(request: LLMRequest, source: AnswerSource = 'trans
         requestApproval,
         sessionFolderName: sessionRuntimeStore.currentSessionFolderName || undefined,
         getLastEventTimestamp: () => lastSessionActivityAt,
+        callVaultTool: callVaultToolGuarded,
       }),
       soulPrompt: heartbeatService.getSoulPrompt(),
       personalityFragment: resolvedPersonality.systemPromptFragment,

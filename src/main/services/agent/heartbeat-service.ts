@@ -72,6 +72,9 @@ interface HeartbeatDeps {
    * session-brain screenshot loop) that are actively running. */
   getCapabilitiesSummary?: () => string
   getSessionContext: () => SessionContext | undefined
+  /** Cross-session memories recalled from Vault at session start. Injected
+   * into the system prompt directly after soul.md, before everything else. */
+  getVaultRecallContext?: () => string
   getProfile: () => ProfileContext | undefined
   getProfileMd: () => string
   getVoiceMd: () => string
@@ -424,8 +427,13 @@ export class HeartbeatService {
       }
       this.lastLLMCallAt = Date.now()
 
+      const vaultRecallContext = this.deps.getVaultRecallContext?.() ?? ''
+
       const systemPrompt = [
         soulText,
+        ...(vaultRecallContext.trim()
+          ? ['', vaultRecallContext.trim()]
+          : []),
         '',
         '## Current Personality',
         personalityConfig.systemPromptFragment,

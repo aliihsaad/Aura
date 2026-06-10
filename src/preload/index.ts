@@ -96,6 +96,14 @@ contextBridge.exposeInMainWorld('api', {
   touchSessionPreset: (id: string) => ipcRenderer.invoke('session-preset:touch', id),
   bubbleFeedback: (input: { bubbleId: string; sentiment: 'up' | 'down'; text: string }) =>
     ipcRenderer.invoke('bubble:feedback', input),
+
+  // Vault MCP bridge (Phase 2)
+  vaultMemoryRecall: (topic?: string) => ipcRenderer.invoke('vault:memory:recall', topic),
+  vaultMemorySave: (payload: { title?: string; subject?: string; summary?: string; content?: string }) =>
+    ipcRenderer.invoke('vault:memory:save', payload),
+  vaultCollabStatus: () => ipcRenderer.invoke('vault:collab:status'),
+  vaultCollabDrain: () => ipcRenderer.invoke('vault:collab:drain'),
+  vaultMcpStatus: () => ipcRenderer.invoke('vault:mcp:status'),
   getCostMeter: () => ipcRenderer.invoke('cost:get'),
   onCostUpdate: (
     callback: (snapshot: {
