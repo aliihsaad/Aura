@@ -3,7 +3,12 @@ import { ChevronRight, X, GripVertical, ThumbsUp, ThumbsDown } from 'lucide-reac
 import type { BubbleUrgency } from '@shared/types'
 import RichContent from '../../overlay/components/RichContent'
 
-interface BubbleProps {
+/**
+ * Floating glass reply panel — Aura's replies materialize around the orb
+ * (Phase 3; evolution of the classic Bubble, same widget contract).
+ */
+
+interface GlassReplyPanelProps {
   id: string
   message: string
   urgency: BubbleUrgency
@@ -18,26 +23,26 @@ interface BubbleProps {
 
 const URGENCY_STYLES: Record<
   BubbleUrgency,
-  { border: string; dot: string; glow: string }
+  { panel: string; dot: string; glow: string }
 > = {
   low: {
-    border: 'border-white/10',
-    dot: 'bg-cyan-400/80',
-    glow: 'shadow-[0_0_8px_rgba(34,211,238,0.45)]',
+    panel: 'glass-panel',
+    dot: 'bg-[#6ea8ff]',
+    glow: 'shadow-[0_0_10px_rgba(110,168,255,0.6)]',
   },
   medium: {
-    border: 'border-cyan-400/30',
-    dot: 'bg-cyan-300',
-    glow: 'shadow-[0_0_10px_rgba(34,211,238,0.7)]',
+    panel: 'glass-panel',
+    dot: 'bg-[#4d7cfe]',
+    glow: 'shadow-[0_0_12px_rgba(77,124,254,0.8)]',
   },
   high: {
-    border: 'border-amber-400/40',
-    dot: 'bg-amber-300',
-    glow: 'shadow-[0_0_10px_rgba(251,191,36,0.7)]',
+    panel: 'glass-panel-violet glass-panel',
+    dot: 'bg-[#a78bfa]',
+    glow: 'shadow-[0_0_12px_rgba(167,139,250,0.85)]',
   },
 }
 
-export default function Bubble({
+export default function GlassReplyPanel({
   id,
   message,
   urgency,
@@ -48,11 +53,11 @@ export default function Bubble({
   onExpand,
   onDismiss,
   onFeedback,
-}: BubbleProps) {
+}: GlassReplyPanelProps) {
   const style = URGENCY_STYLES[urgency]
-  const paddingY = Math.max(8, Math.round(fontSize * 0.8))
-  const paddingX = Math.max(10, Math.round(fontSize * 0.9))
-  // Feedback state is *per-turn*. The heartbeat reuses the same bubble id
+  const paddingY = Math.max(10, Math.round(fontSize * 0.9))
+  const paddingX = Math.max(12, Math.round(fontSize * 1.0))
+  // Feedback state is *per-turn*. The heartbeat reuses the same widget id
   // across answers (it updates message in place), so React keeps this
   // component mounted between turns. Without an explicit reset, voting
   // on turn 1 would lock the buttons forever. Reset whenever streaming
@@ -84,9 +89,9 @@ export default function Bubble({
         width: `${width}px`,
         padding: `${paddingY}px ${paddingX}px`,
       }}
-      className={`bubble-enter group relative flex items-start gap-2.5 rounded-2xl rounded-bl-md backdrop-blur-md border ${style.border} bg-gradient-to-br from-zinc-900/95 to-black/95 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)] cursor-grab active:cursor-grabbing select-none ring-1 ring-inset ring-white/5 hover:ring-white/10 transition-all`}
+      className={`bubble-enter glass-drift group relative flex items-start gap-2.5 rounded-2xl ${style.panel} cursor-grab active:cursor-grabbing select-none transition-all`}
     >
-      {/* Left: branded indicator dot */}
+      {/* Left: aurora indicator dot */}
       <div className="flex flex-col items-center pt-1 shrink-0">
         <span
           className={`block w-2 h-2 rounded-full ${style.dot} ${style.glow}`}
@@ -101,7 +106,7 @@ export default function Bubble({
         {streaming && (
           <span
             aria-hidden
-            className="inline-block align-[-0.15em] ml-0.5 w-[2px] bg-cyan-300/90 animate-pulse"
+            className="inline-block align-[-0.15em] ml-0.5 w-[2px] bg-[#6ea8ff]/90 animate-pulse"
             style={{ height: `${Math.round(fontSize * 1.05)}px` }}
           />
         )}
@@ -111,7 +116,7 @@ export default function Bubble({
       <div className="flex items-center gap-1 shrink-0 -mr-0.5 -mt-0.5">
         {!streaming && onFeedback && (
           <div
-            className="bubble-feedback-cluster flex items-center gap-1 rounded-lg bg-white/[0.025] border border-white/[0.06] px-1 py-0.5"
+            className="bubble-feedback-cluster flex items-center gap-1 rounded-lg bg-white/[0.03] border border-white/[0.07] px-1 py-0.5"
             data-feedback-state={feedback || 'none'}
           >
             <button
@@ -119,8 +124,8 @@ export default function Bubble({
               onMouseDown={(e) => e.stopPropagation()}
               className={`bubble-feedback-btn inline-flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                 feedback === 'up'
-                  ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 shadow-[0_0_8px_rgba(52,211,153,0.25)]'
-                  : 'text-white/55 hover:bg-emerald-500/10 hover:text-emerald-300 border border-transparent'
+                  ? 'bg-teal-400/20 text-teal-200 border border-teal-300/30 shadow-[0_0_8px_rgba(45,212,191,0.3)]'
+                  : 'text-white/55 hover:bg-teal-400/10 hover:text-teal-300 border border-transparent'
               } ${pulse === 'up' ? 'bubble-feedback-pulse' : ''}`}
               title="Helpful — agent reinforces this style"
               aria-pressed={feedback === 'up'}

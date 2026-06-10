@@ -28,15 +28,15 @@ const PRESENCE_STYLES: Record<AgentPresenceState, { className: string; label: st
     label: 'Sleeping',
   },
   idle: {
-    className: 'bg-emerald-400/60 presence-breathing',
+    className: 'bg-[#6ea8ff]/60 shadow-[0_0_8px_rgba(110,168,255,0.5)] presence-breathing',
     label: 'Idle',
   },
   listening: {
-    className: 'bg-cyan-400/70 presence-breathing',
+    className: 'bg-[#4d7cfe]/80 shadow-[0_0_10px_rgba(77,124,254,0.7)] presence-breathing',
     label: 'Listening',
   },
   thinking: {
-    className: 'bg-amber-400/80 presence-pulsing',
+    className: 'bg-[#a78bfa]/90 shadow-[0_0_10px_rgba(167,139,250,0.7)] presence-pulsing',
     label: 'Thinking',
   },
   speaking: {
@@ -59,7 +59,7 @@ function SpeakingWaveform({ size }: { size: number }) {
       {Array.from({ length: barCount }).map((_, i) => (
         <div
           key={i}
-          className="bg-emerald-400 rounded-full presence-wave-bar"
+          className="bg-[#2dd4bf] rounded-full presence-wave-bar"
           style={{
             width: barWidth,
             height: size * 0.6,

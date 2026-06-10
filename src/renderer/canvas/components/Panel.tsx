@@ -22,9 +22,9 @@ export default function Panel({ id, title, content, panelType, fontSize: initial
   void panelType
 
   return (
-    <div className="flex flex-col bg-black/85 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[400px] min-h-[200px] max-w-[900px] max-h-[80vh]">
+    <div className="glass-panel bubble-enter flex flex-col rounded-2xl overflow-hidden min-w-[400px] min-h-[200px] max-w-[900px] max-h-[80vh]">
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b border-white/10 bg-white/5 shrink-0"
+        className="flex items-center gap-2 px-3 py-2 border-b border-white/8 bg-white/[0.04] shrink-0"
         data-drag-handle
       >
         <GripVertical size={14} className="text-white/30 cursor-grab" />

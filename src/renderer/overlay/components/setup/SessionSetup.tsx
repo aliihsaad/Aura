@@ -78,7 +78,7 @@ export default function SessionSetup({ onStart, onSkip, onCancel }: SessionSetup
             <button
               onClick={onNext}
               disabled={!canAdvance}
-              className="flex-1 rounded-lg bg-cyan-500/12 border border-cyan-500/20 py-2 text-[12px] font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-all disabled:opacity-45 disabled:pointer-events-none"
+              className="flex-1 rounded-lg bg-blue-500/12 border border-blue-500/20 py-2 text-[12px] font-semibold text-blue-300 hover:bg-blue-500/20 transition-all disabled:opacity-45 disabled:pointer-events-none"
             >
               <span className="inline-flex items-center gap-1">
                 Next

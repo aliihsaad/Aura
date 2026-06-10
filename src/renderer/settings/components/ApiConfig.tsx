@@ -7,7 +7,7 @@ import LocalAiSettings from './LocalAiSettings'
 import VaultSyncSettings from './VaultSyncSettings'
 
 const inputClass =
-  'input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-4 py-2.5 text-[13px] text-white/80 placeholder:text-white/15 focus:border-cyan-500/25 focus:outline-none transition-all font-mono tracking-wide'
+  'input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-4 py-2.5 text-[13px] text-white/80 placeholder:text-white/15 focus:border-blue-500/25 focus:outline-none transition-all font-mono tracking-wide'
 
 export default function ApiConfig() {
   const [openrouterKey, setOpenrouterKey] = useState('')
@@ -169,7 +169,7 @@ export default function ApiConfig() {
     free: 'text-violet-400/70',
     budget: 'text-emerald-400/50',
     mid: 'text-amber-400/50',
-    premium: 'text-cyan-400/50',
+    premium: 'text-blue-400/50',
   }
   const coreTools = agentTools.filter((tool) => tool.scope === 'core')
   const liveOnlyTools = agentTools.filter((tool) => tool.scope === 'live-only')
@@ -192,7 +192,7 @@ export default function ApiConfig() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h2 className="text-[18px] font-semibold text-white/90 tracking-tight">Settings</h2>
+        <h2 className="text-[30px] font-light text-white/95 tracking-[-0.02em]">Settings</h2>
         <p className="text-[13px] text-white/35 mt-1">
           API keys, model selection, and overlay preferences.
         </p>
@@ -203,7 +203,7 @@ export default function ApiConfig() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Shield size={14} className="text-white/25" />
-            <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+            <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
               API Keys
             </h3>
           </div>
@@ -230,7 +230,7 @@ export default function ApiConfig() {
             />
             <button
               onClick={() => window.api.openExternal('https://openrouter.ai/keys')}
-              className="flex items-center gap-1 mt-1.5 text-[10.5px] text-white/25 hover:text-cyan-400/60 transition-colors"
+              className="flex items-center gap-1 mt-1.5 text-[10.5px] text-white/25 hover:text-blue-400/60 transition-colors"
             >
               <ExternalLink size={10} />
               Get your free API key at openrouter.ai/keys
@@ -250,7 +250,7 @@ export default function ApiConfig() {
             />
             <button
               onClick={() => window.api.openExternal('https://console.deepgram.com')}
-              className="flex items-center gap-1 mt-1.5 text-[10.5px] text-white/25 hover:text-cyan-400/60 transition-colors"
+              className="flex items-center gap-1 mt-1.5 text-[10.5px] text-white/25 hover:text-blue-400/60 transition-colors"
             >
               <ExternalLink size={10} />
               Get your free API key at console.deepgram.com
@@ -283,7 +283,7 @@ export default function ApiConfig() {
             />
           </div>
 
-          <div className="rounded-xl border border-cyan-400/10 bg-cyan-400/2.5 px-3 py-3 text-[11px] leading-relaxed text-cyan-100/35">
+          <div className="rounded-xl border border-blue-400/10 bg-blue-400/2.5 px-3 py-3 text-[11px] leading-relaxed text-blue-100/35">
             OpenRouter runs Classic Companion reasoning. Deepgram is used for speech-to-text and Classic Companion voice. FreeLLMAPI is only used when Companion engine is set to Realtime Beta.
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Cpu size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             LLM Model
           </h3>
         </div>
@@ -310,7 +310,7 @@ export default function ApiConfig() {
                   i < models.length - 1 ? 'border-b border-white/[0.035]' : ''
                 } ${
                   isSelected
-                    ? 'bg-cyan-500/6'
+                    ? 'bg-blue-500/6'
                     : 'bg-transparent hover:bg-white/2.5'
                 }`}
               >
@@ -318,12 +318,12 @@ export default function ApiConfig() {
                   <div
                     className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                       isSelected
-                        ? 'border-cyan-400 bg-cyan-400/10'
+                        ? 'border-blue-400 bg-blue-400/10'
                         : 'border-white/15'
                     }`}
                   >
                     {isSelected && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                     )}
                   </div>
                   <span className={`text-[13px] font-medium ${isSelected ? 'text-white/90' : 'text-white/60'}`}>
@@ -362,12 +362,12 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Eye size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Image Generation
           </h3>
         </div>
 
-        <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-4">
+        <div className="glass-card rounded-2xl p-7 space-y-4">
           <div>
             <label className="block text-[11.5px] font-medium text-white/40 mb-2 uppercase tracking-wider">
               OpenRouter Image Model
@@ -385,7 +385,7 @@ export default function ApiConfig() {
             </select>
             <button
               onClick={() => window.api.openExternal('https://openrouter.ai/models?output_modalities=image')}
-              className="flex items-center gap-1 mt-1.5 text-[10.5px] text-white/25 hover:text-cyan-400/60 transition-colors"
+              className="flex items-center gap-1 mt-1.5 text-[10.5px] text-white/25 hover:text-blue-400/60 transition-colors"
             >
               <ExternalLink size={10} />
               Browse image-capable models on OpenRouter
@@ -402,12 +402,12 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Code size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Smart Model Routing
           </h3>
         </div>
 
-        <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
+        <div className="glass-card rounded-2xl p-7 space-y-5">
           {/* Toggle */}
           <div className="flex items-center justify-between">
             <div>
@@ -421,7 +421,7 @@ export default function ApiConfig() {
               className="text-white/60 hover:text-white/80 transition-colors"
             >
               {autoModelSelection ? (
-                <ToggleRight size={28} className="text-cyan-400" />
+                <ToggleRight size={28} className="text-blue-400" />
               ) : (
                 <ToggleLeft size={28} />
               )}
@@ -489,12 +489,12 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Brain size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Session Brain
           </h3>
         </div>
 
-        <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
+        <div className="glass-card rounded-2xl p-7 space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-[12.5px] text-white/60">Enable session brain</div>
@@ -508,7 +508,7 @@ export default function ApiConfig() {
               className="text-white/60 hover:text-white/80 transition-colors"
             >
               {brainEnabled ? (
-                <ToggleRight size={28} className="text-cyan-400" />
+                <ToggleRight size={28} className="text-blue-400" />
               ) : (
                 <ToggleLeft size={28} />
               )}
@@ -585,12 +585,12 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Brain size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Agent Behavior
           </h3>
         </div>
 
-        <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
+        <div className="glass-card rounded-2xl p-7 space-y-5">
           {/* Personality */}
           <div className="border-t border-white/4 pt-5">
             <label className="block text-[11.5px] font-medium text-white/40 mb-2 uppercase tracking-wider">
@@ -599,7 +599,7 @@ export default function ApiConfig() {
             <select
               value={personality}
               onChange={(e) => setPersonality(e.target.value as typeof personality)}
-              className="w-full rounded-xl bg-[#0a0a0f] border border-white/6 px-4 py-2.5 pr-10 text-[13px] text-white/80 focus:border-cyan-500/25 focus:outline-none transition-all appearance-none cursor-pointer bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.4)%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')] bg-position-[right_0.9rem_center] bg-no-repeat"
+              className="w-full rounded-xl bg-[#0a0a0f] border border-white/6 px-4 py-2.5 pr-10 text-[13px] text-white/80 focus:border-blue-500/25 focus:outline-none transition-all appearance-none cursor-pointer bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.4)%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')] bg-position-[right_0.9rem_center] bg-no-repeat"
             >
               <option value="auto" className="bg-[#0a0a0f] text-white/85">Auto — adapt to context</option>
               <option value="focused" className="bg-[#0a0a0f] text-white/85">Focused — minimal interruptions</option>
@@ -616,7 +616,7 @@ export default function ApiConfig() {
             <select
               value={interruptionPolicy}
               onChange={(e) => setInterruptionPolicy(e.target.value as typeof interruptionPolicy)}
-              className="w-full rounded-xl bg-[#0a0a0f] border border-white/6 px-4 py-2.5 pr-10 text-[13px] text-white/80 focus:border-cyan-500/25 focus:outline-none transition-all appearance-none cursor-pointer bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.4)%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')] bg-position-[right_0.9rem_center] bg-no-repeat"
+              className="w-full rounded-xl bg-[#0a0a0f] border border-white/6 px-4 py-2.5 pr-10 text-[13px] text-white/80 focus:border-blue-500/25 focus:outline-none transition-all appearance-none cursor-pointer bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.4)%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')] bg-position-[right_0.9rem_center] bg-no-repeat"
             >
               <option value="auto" className="bg-[#0a0a0f] text-white/85">Auto — follow personality</option>
               <option value="silent" className="bg-[#0a0a0f] text-white/85">Silent — never interrupt</option>
@@ -629,7 +629,7 @@ export default function ApiConfig() {
           <div className="border-t border-white/4 pt-5">
             <div className="flex items-center justify-between mb-3">
               <label className="text-[12.5px] text-white/50">Heartbeat Interval</label>
-              <span className="text-[12px] font-mono text-cyan-400/70 bg-cyan-400/6 rounded-md px-2 py-0.5">
+              <span className="text-[12px] font-mono text-blue-400/70 bg-blue-400/6 rounded-md px-2 py-0.5">
                 {(heartbeatIntervalMs / 1000).toFixed(0)}s
               </span>
             </div>
@@ -651,7 +651,7 @@ export default function ApiConfig() {
           <div className="border-t border-white/4 pt-5">
             <div className="flex items-center justify-between mb-3">
               <label className="text-[12.5px] text-white/50">Bubble Font Size</label>
-              <span className="text-[12px] font-mono text-cyan-400/70 bg-cyan-400/6 rounded-md px-2 py-0.5">
+              <span className="text-[12px] font-mono text-blue-400/70 bg-blue-400/6 rounded-md px-2 py-0.5">
                 {bubbleFontSize}px
               </span>
             </div>
@@ -670,7 +670,7 @@ export default function ApiConfig() {
           <div className="border-t border-white/4 pt-5">
             <div className="flex items-center justify-between mb-3">
               <label className="text-[12.5px] text-white/50">Bubble Width</label>
-              <span className="text-[12px] font-mono text-cyan-400/70 bg-cyan-400/6 rounded-md px-2 py-0.5">
+              <span className="text-[12px] font-mono text-blue-400/70 bg-blue-400/6 rounded-md px-2 py-0.5">
                 {bubbleWidth}px
               </span>
             </div>
@@ -694,12 +694,12 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Radio size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Mode
           </h3>
         </div>
 
-        <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-4">
+        <div className="glass-card rounded-2xl p-7 space-y-4">
           {!openrouterKey && (
             <div className="text-[11.5px] text-amber-300/80 px-1">
               Set an OpenRouter API key above to use Companion mode.
@@ -747,12 +747,12 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Wrench size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Agent Tools
           </h3>
         </div>
 
-        <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
+        <div className="glass-card rounded-2xl p-7 space-y-5">
           <div className="text-[11px] text-white/30 leading-relaxed">
             These are the functions the agent can call internally. Core tools run in the main
             answer pipeline; companion and proactive modes delegate tool-heavy requests there.
@@ -760,7 +760,7 @@ export default function ApiConfig() {
           </div>
 
           {[
-            { label: 'Core', tools: coreTools, accent: 'text-cyan-300/80', badge: 'Answer pipeline' },
+            { label: 'Core', tools: coreTools, accent: 'text-blue-300/80', badge: 'Answer pipeline' },
             { label: 'Companion', tools: liveOnlyTools, accent: 'text-emerald-300/80', badge: 'Companion mode' },
           ].map((group) => (
             <div key={group.label} className="border-t border-white/4 pt-5 first:border-t-0 first:pt-0">
@@ -803,7 +803,7 @@ export default function ApiConfig() {
                           {tool.enabled === false ? (
                             <ToggleLeft size={26} className="text-white/28" />
                           ) : (
-                            <ToggleRight size={26} className="text-cyan-400" />
+                            <ToggleRight size={26} className="text-blue-400" />
                           )}
                         </button>
                       ) : (
@@ -829,16 +829,16 @@ export default function ApiConfig() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <SlidersHorizontal size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Overlay
           </h3>
         </div>
 
-        <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
+        <div className="glass-card rounded-2xl p-7 space-y-5">
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="text-[12.5px] text-white/50">Opacity</label>
-              <span className="text-[12px] font-mono text-cyan-400/70 bg-cyan-400/6 rounded-md px-2 py-0.5">
+              <span className="text-[12px] font-mono text-blue-400/70 bg-blue-400/6 rounded-md px-2 py-0.5">
                 {Math.round(overlayOpacity * 100)}%
               </span>
             </div>
@@ -856,7 +856,7 @@ export default function ApiConfig() {
           <div className="border-t border-white/4 pt-5">
             <div className="flex items-center justify-between mb-3">
               <label className="text-[12.5px] text-white/50">Font Size</label>
-              <span className="text-[12px] font-mono text-cyan-400/70 bg-cyan-400/6 rounded-md px-2 py-0.5">
+              <span className="text-[12px] font-mono text-blue-400/70 bg-blue-400/6 rounded-md px-2 py-0.5">
                 {fontSize}px
               </span>
             </div>
@@ -879,7 +879,7 @@ export default function ApiConfig() {
         className={`w-full rounded-xl py-3.5 text-[13px] font-semibold transition-all duration-250 flex items-center justify-center gap-2 btn-press ${
           saved
             ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/20 shadow-[0_0_20px_rgba(52,211,153,0.08)]'
-            : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/15 hover:bg-cyan-500/15 hover:border-cyan-500/25 hover:shadow-[0_0_20px_rgba(34,211,238,0.08)]'
+            : 'bg-blue-500/10 text-blue-400 border border-blue-500/15 hover:bg-blue-500/15 hover:border-blue-500/25 hover:shadow-[0_0_20px_rgba(34,211,238,0.08)]'
         }`}
       >
         {saved ? (

@@ -82,7 +82,7 @@ export default function SessionControl({ isSessionActive }: SessionControlProps)
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h2 className="text-[18px] font-semibold text-white/90 tracking-tight">Session</h2>
+        <h2 className="text-[30px] font-light text-white/95 tracking-[-0.02em]">Session</h2>
         <p className="text-[13px] text-white/35 mt-1">
           Control live capture sessions and review saved runs.
         </p>
@@ -147,7 +147,7 @@ export default function SessionControl({ isSessionActive }: SessionControlProps)
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Keyboard size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Shortcuts
           </h3>
         </div>
@@ -172,7 +172,7 @@ export default function SessionControl({ isSessionActive }: SessionControlProps)
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Clock size={14} className="text-white/25" />
-          <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+          <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
             Past Sessions
           </h3>
           {sessions.length > 0 && (

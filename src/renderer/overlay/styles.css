@@ -1,4 +1,55 @@
 @import "tailwindcss";
+@import '@fontsource-variable/inter';
+
+/* ── Aura design tokens — deep navy-indigo base, electric blue / violet
+   aurora accents (Phase 3 locked direction) ─────────────────────────── */
+@theme {
+  --font-sans: 'Inter Variable', Inter, -apple-system, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+
+  --color-abyss: #060710;
+  --color-deep: #0b0d1a;
+  --color-deep-2: #11142a;
+  --color-electric: #4d7cfe;
+  --color-electric-bright: #6ea8ff;
+  --color-violet-aura: #8b5cf6;
+  --color-violet-bright: #a78bfa;
+  --color-teal-aura: #2dd4bf;
+}
+
+/* ── Glass system — graded blur tiers with luminous borders, top inner
+   highlight, and a soft aurora outer glow ───────────────────────────── */
+.glass-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%),
+    linear-gradient(135deg, rgba(13, 16, 33, 0.88) 0%, rgba(8, 9, 20, 0.92) 100%);
+  backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid rgba(124, 144, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 0 1px rgba(6, 7, 16, 0.4),
+    0 18px 50px -18px rgba(3, 4, 12, 0.9),
+    0 0 32px -12px rgba(77, 124, 254, 0.25);
+}
+
+.glass-deep {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%),
+    linear-gradient(160deg, rgba(11, 13, 26, 0.94) 0%, rgba(6, 7, 16, 0.96) 100%);
+  backdrop-filter: blur(40px) saturate(1.25);
+  border: 1px solid rgba(124, 144, 255, 0.13);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 24px 70px -22px rgba(3, 4, 12, 0.95),
+    0 0 44px -16px rgba(139, 92, 246, 0.28);
+}
+
+@keyframes panel-materialize {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.glass-materialize {
+  animation: panel-materialize 0.28s cubic-bezier(0.21, 1.02, 0.73, 1);
+}
 
 /* Custom scrollbar — thin, subtle */
 ::-webkit-scrollbar {
@@ -76,7 +127,7 @@ body {
   padding: 0;
   background: transparent;
   overflow: hidden;
-  font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -110,10 +161,10 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #22d3ee;
+  background: #6ea8ff;
   cursor: pointer;
-  border: 2px solid rgba(10, 12, 16, 0.9);
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+  border: 2px solid rgba(6, 7, 16, 0.9);
+  box-shadow: 0 0 8px rgba(77, 124, 254, 0.4);
 }
 
 /* Agent voice wave — three bars that pulse at slightly different rates so
@@ -122,8 +173,8 @@ input[type="range"]::-webkit-slider-thumb {
   display: block;
   width: 2px;
   border-radius: 1px;
-  background: #22d3ee;
-  box-shadow: 0 0 4px rgba(34, 211, 238, 0.5);
+  background: #6ea8ff;
+  box-shadow: 0 0 4px rgba(110, 168, 255, 0.55);
   transform-origin: center;
   animation: voice-wave 0.7s ease-in-out infinite alternate;
 }

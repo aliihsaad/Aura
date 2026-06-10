@@ -21,7 +21,7 @@ export default function Toast({ id, message, ttl }: ToastProps) {
 
   return (
     <div
-      className={`px-4 py-2 rounded-lg bg-black/80 backdrop-blur-sm border border-white/10 text-white/90 text-sm shadow-lg ${
+      className={`glass-panel px-4 py-2 rounded-xl text-white/90 text-sm ${
         exiting ? 'toast-exit' : 'toast-enter'
       }`}
     >

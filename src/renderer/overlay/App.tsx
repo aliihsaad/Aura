@@ -629,9 +629,9 @@ export default function App() {
 
     return (
       <div className="overlay-shell h-full w-full bg-transparent p-0 text-white">
-        <div className="flex h-full min-h-105 flex-col overflow-hidden rounded-2xl border border-white/6 bg-[rgba(10,12,16,0.92)] shadow-[0_16px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+        <div className="glass-deep flex h-full min-h-105 flex-col overflow-hidden rounded-2xl">
           <div className="drag-handle flex cursor-grab items-center justify-between border-b border-white/6 px-4 py-2 active:cursor-grabbing">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-200/80">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-200/80">
               Detail
             </span>
             <button
@@ -671,7 +671,7 @@ export default function App() {
       <div className="flex h-full w-full items-center justify-center">
         <button
           onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-2 rounded-2xl border border-white/6 bg-[rgba(12,14,18,0.82)] px-5 py-3 text-[13px] font-semibold text-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-200 hover:bg-[rgba(12,14,18,0.92)] hover:text-white/90"
+          className="glass-panel flex items-center gap-2 rounded-full px-5 py-3 text-[13px] font-semibold text-white/70 transition-all duration-200 hover:text-white/90"
           title="Expand overlay"
         >
           <Sparkles size={15} />
@@ -739,7 +739,7 @@ export default function App() {
             className="pointer-events-auto relative z-15 mt-2 px-5"
             style={controlBarWidth ? { width: `${controlBarWidth}px` } : undefined}
           >
-            <div className="rounded-2xl border border-white/6 bg-[rgba(12,14,18,0.92)] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl p-4">
+            <div className="glass-deep glass-materialize rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle size={15} className="text-amber-400/80" />
                 <p className="text-[13px] font-medium text-white/80">End this session?</p>

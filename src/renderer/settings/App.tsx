@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Radio, FileText, Settings, Monitor, FolderOpen, Zap, Eye, EyeOff, Download, Database } from 'lucide-react'
+import { Radio, FileText, Settings, Monitor, FolderOpen, Eye, EyeOff, Download, Database } from 'lucide-react'
 import ApiConfig from './components/ApiConfig'
 import ContextUpload from './components/ContextUpload'
 import MemoryViewer from './components/MemoryViewer'
@@ -46,21 +46,21 @@ export default function App() {
   }, [])
 
   return (
-    <div className="flex h-screen bg-[#08090c] text-white overflow-hidden">
+    <div className="aurora-field flex h-screen bg-[#060710] text-white overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-[200px] shrink-0 bg-[#0c0d11] border-r border-white/[0.04] flex flex-col">
+      <aside className="w-[228px] shrink-0 bg-[rgba(11,13,26,0.55)] backdrop-blur-2xl border-r border-[rgba(124,144,255,0.08)] flex flex-col">
         {/* Logo / Brand */}
-        <div className="px-5 pt-6 pb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400/20 to-cyan-600/10 border border-cyan-400/15 flex items-center justify-center">
-              <Zap size={14} className="text-cyan-400" />
+        <div className="px-6 pt-9 pb-8">
+          <div className="flex items-center gap-3.5">
+            <div className="relative w-11 h-11 rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.5)_0%,transparent_30%),radial-gradient(circle_at_50%_55%,#6ea8ff_0%,#4d7cfe_40%,#8b5cf6_75%,#0b0d1a_100%)] shadow-[0_0_22px_rgba(77,124,254,0.55),0_0_50px_-10px_rgba(139,92,246,0.5)]">
+              <span className="absolute -inset-1.5 rounded-full border border-[rgba(110,168,255,0.2)]" />
             </div>
             <div>
-              <h1 className="text-[13px] font-semibold text-white/90 leading-tight">
+              <h1 className="text-[19px] font-extralight tracking-[0.08em] text-white/95 leading-tight">
                 Aura
               </h1>
-              <p className="text-[10px] text-white/30 leading-tight">
-                Control Center
+              <p className="text-[9.5px] uppercase tracking-[0.22em] text-white/25 leading-tight mt-0.5">
+                Companion
               </p>
             </div>
           </div>
@@ -75,13 +75,13 @@ export default function App() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 btn-press ${
+                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-200 btn-press ${
                   isActive
-                    ? 'nav-active border border-cyan-400/15 text-white/95'
+                    ? 'nav-active border border-blue-400/15 text-white/95'
                     : 'border border-transparent text-white/45 hover:text-white/70 hover:bg-white/[0.03]'
                 }`}
               >
-                <Icon size={15} className={isActive ? 'text-cyan-400' : ''} />
+                <Icon size={15} className={isActive ? 'text-blue-400' : ''} />
                 <div>
                   <div className="text-[12.5px] font-medium leading-tight">{tab.label}</div>
                   <div className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/40' : 'text-white/25'}`}>
@@ -97,7 +97,7 @@ export default function App() {
         <div className="px-3 pb-4 space-y-2">
           <button
             onClick={() => window.api.showOverlay()}
-            className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-medium bg-cyan-500/8 text-cyan-400/90 border border-cyan-500/12 hover:bg-cyan-500/12 hover:text-cyan-400 transition-all duration-200 btn-press"
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-medium bg-blue-500/8 text-blue-400/90 border border-blue-500/12 hover:bg-blue-500/12 hover:text-blue-400 transition-all duration-200 btn-press"
             title="Show overlay (Ctrl+Shift+O)"
           >
             <Monitor size={13} />
@@ -105,7 +105,7 @@ export default function App() {
           </button>
           <button
             onClick={() => window.api.togglePreviewWindow()}
-            className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-medium bg-cyan-500/8 text-cyan-400/90 border border-cyan-500/12 hover:bg-cyan-500/12 hover:text-cyan-400 transition-all duration-200 btn-press"
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-medium bg-blue-500/8 text-blue-400/90 border border-blue-500/12 hover:bg-blue-500/12 hover:text-blue-400 transition-all duration-200 btn-press"
             title="Preview files"
           >
             <FileText size={13} />
@@ -138,7 +138,7 @@ export default function App() {
           {updateInfo ? (
             <button
               onClick={() => window.api.openExternal(updateInfo.releaseUrl)}
-              className="w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 mt-1 text-[10px] font-medium text-cyan-400/80 bg-cyan-500/[0.06] border border-cyan-500/[0.1] hover:bg-cyan-500/[0.12] transition-all"
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 mt-1 text-[10px] font-medium text-blue-400/80 bg-blue-500/[0.06] border border-blue-500/[0.1] hover:bg-blue-500/[0.12] transition-all"
             >
               <Download size={10} />
               Update {updateInfo.latestVersion}
@@ -151,7 +151,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-[640px] mx-auto px-8 py-8 stagger-children">
+        <div className="max-w-[780px] mx-auto px-14 py-16 stagger-children">
           {activeTab === 'session' && (
             <SessionControl isSessionActive={isSessionActive} />
           )}

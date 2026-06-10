@@ -202,7 +202,7 @@ export default function Controls({
 
   return (
     <div className="relative flex flex-col gap-0 overflow-visible">
-    <div className="flex items-center gap-1 rounded-2xl border border-white/6 bg-[rgba(12,14,18,0.82)] px-2 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="glass-panel flex items-center gap-1 rounded-full px-2.5 py-1.5">
       {/* Drag handle */}
       <div
         className="drag-handle flex cursor-grab items-center justify-center rounded-xl px-2 py-3 text-white/20 hover:bg-white/4 hover:text-white/40 active:cursor-grabbing"
@@ -315,7 +315,7 @@ export default function Controls({
           }
           className={`no-drag relative flex items-center justify-center rounded-xl p-2.5 transition-all duration-150 ${
             liveAgentMode === 'voice'
-              ? 'text-cyan-400 hover:bg-white/6'
+              ? 'text-blue-400 hover:bg-white/6'
               : 'text-white/40 hover:bg-white/6'
           }`}
         >
@@ -457,7 +457,7 @@ export default function Controls({
         </button>
 
         {menuOpen && (
-          <div className="no-drag absolute right-0 top-full z-50 mt-2 w-55 rounded-2xl border border-white/6 bg-[rgba(12,14,18,0.95)] p-2 shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+          <div className="glass-deep glass-materialize no-drag absolute right-0 top-full z-50 mt-2 w-55 rounded-2xl p-2">
             {/* Dashboard / Settings */}
             <MenuButton
               icon={<Settings size={15} />}
@@ -497,20 +497,20 @@ export default function Controls({
                 onClick={() => setLangOpen((v) => !v)}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-white/70 transition-all duration-150 hover:bg-white/5 hover:text-white/90"
               >
-                <Globe size={15} className={`shrink-0 ${sttReconnecting ? 'animate-spin text-cyan-400' : 'text-white/40'}`} />
+                <Globe size={15} className={`shrink-0 ${sttReconnecting ? 'animate-spin text-blue-400' : 'text-white/40'}`} />
                 <span className="flex-1 text-left">{sttReconnecting ? 'Switching...' : currentLangName}</span>
                 <ChevronRight size={13} className={`text-white/20 transition-transform ${langOpen ? 'rotate-90' : ''}`} />
               </button>
 
               {langOpen && (
-                <div className="absolute right-full top-0 z-60 mr-2 max-h-65 w-55 overflow-y-auto rounded-2xl border border-white/6 bg-[rgba(8,10,14,0.96)] p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+                <div className="glass-deep glass-materialize absolute right-full top-0 z-60 mr-2 max-h-65 w-55 overflow-y-auto rounded-2xl p-1.5">
                   {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}
                       onClick={() => void handleLanguageChange(lang.code)}
                       className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[12px] transition-all duration-100 ${
                         sttLanguage === lang.code
-                          ? 'bg-cyan-500/8 text-cyan-400'
+                          ? 'bg-blue-500/8 text-blue-400'
                           : 'text-white/60 hover:bg-white/4 hover:text-white/80'
                       }`}
                     >
@@ -556,7 +556,7 @@ export default function Controls({
 
     {/* Chat input row */}
     {chatInputOpen && (
-      <div className="mt-1.5 flex items-center gap-2 rounded-2xl border border-white/6 bg-[rgba(12,14,18,0.82)] px-3 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+      <div className="glass-panel glass-materialize mt-1.5 flex items-center gap-2 rounded-full px-3 py-2">
         <input
           ref={chatInputRef}
           type="text"
@@ -579,7 +579,7 @@ export default function Controls({
 
     {/* Exit confirmation modal */}
     {confirmExit && (
-      <div className="mt-1.5 rounded-2xl border border-white/6 bg-[rgba(12,14,18,0.95)] px-4 py-3 shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+      <div className="glass-deep glass-materialize mt-1.5 rounded-2xl px-4 py-3">
         <p className="mb-3 text-[13px] text-white/80">
           A session is currently live. What would you like to do?
         </p>
@@ -657,7 +657,7 @@ function MenuToggle({
       <span className="flex-1 text-left">{label}</span>
       <div
         className={`h-5.5 w-10 rounded-full p-0.5 transition-colors duration-200 ${
-          checked ? 'bg-cyan-500' : 'bg-white/10'
+          checked ? 'bg-blue-500' : 'bg-white/10'
         }`}
       >
         <div

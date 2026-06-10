@@ -98,7 +98,7 @@ export default function Transcript({
   if (!expanded) {
     const hasContent = latestText || systemInterimText || userInterimText
     return (
-      <div className="flex items-center gap-0 rounded-2xl border border-white/[0.06] bg-[rgba(12,14,18,0.82)] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+      <div className="glass-panel flex items-center gap-0 rounded-full">
         {/* Transcript text area */}
         <div className="no-drag min-w-0 flex-1 px-4 py-3">
           {!hasContent ? (
@@ -118,7 +118,7 @@ export default function Transcript({
                   {latestText.text}
                 </span>
                 {latestText.isInterim && (
-                  <span className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-cyan-400" />
+                  <span className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blue-400" />
                 )}
               </div>
             )
@@ -130,7 +130,7 @@ export default function Transcript({
           {detectedQuestion && (
             <button
               onClick={onAnswerThis}
-              className="rounded-lg p-1.5 text-cyan-400/60 transition-all duration-150 hover:bg-white/[0.06] hover:text-cyan-400"
+              className="rounded-lg p-1.5 text-blue-400/60 transition-all duration-150 hover:bg-white/[0.06] hover:text-blue-400"
               title="Answer this question"
             >
               <Sparkles size={14} />
@@ -157,7 +157,7 @@ export default function Transcript({
 
   // Expanded mode — full scrollable transcript panel
   return (
-    <div className="flex max-h-full flex-col rounded-2xl border border-white/[0.06] bg-[rgba(12,14,18,0.82)] px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+    <div className="glass-deep glass-materialize flex max-h-full flex-col rounded-2xl px-4 py-3">
       {/* Header */}
       <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">
@@ -169,7 +169,7 @@ export default function Transcript({
           >
             <div
               className={`h-[18px] w-[32px] rounded-full p-[2px] transition-colors duration-200 ${
-                autoScroll ? 'bg-cyan-500' : 'bg-white/10'
+                autoScroll ? 'bg-blue-500' : 'bg-white/10'
               }`}
             >
               <div
@@ -182,8 +182,8 @@ export default function Transcript({
           </button>
           {detectedQuestion && (
             <div className="flex items-center gap-1.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
-              <span className="text-[11px] text-cyan-400/80">Question detected</span>
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
+              <span className="text-[11px] text-blue-400/80">Question detected</span>
             </div>
           )}
         </div>
@@ -241,7 +241,7 @@ export default function Transcript({
                 <div className={`mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${getLabelColor(row)}`}>
                   <SpeakerTag entry={row} sessionIntent={sessionIntent} isQuestion={row.isQuestion} />
                   {row.isChat && (
-                    <span className="rounded-md bg-cyan-500/15 px-1.5 py-0.5 text-[9px] text-cyan-300/80">Chat</span>
+                    <span className="rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[9px] text-blue-300/80">Chat</span>
                   )}
                   {row.isInterim && (
                     <span className="ml-1 flex items-center gap-1">
@@ -280,21 +280,21 @@ function SpeakerTag({
   }
   const label = getTranscriptSpeakerLabel(entry, sessionIntent)
   const color = label === 'You'
-    ? 'text-cyan-400/70'
+    ? 'text-blue-400/70'
     : label === 'Chat'
-      ? 'text-cyan-300/80'
+      ? 'text-blue-300/80'
       : 'text-white/40'
   return <span className={`text-[10px] font-semibold uppercase tracking-wider ${color}`}>{label}</span>
 }
 
 function getEntryBg(row: { isQuestion: boolean; speaker: string }) {
   if (row.isQuestion) return 'bg-amber-500/[0.06] border border-amber-400/[0.08]'
-  if (row.speaker === 'user') return 'bg-cyan-500/[0.06] border border-cyan-400/[0.08]'
+  if (row.speaker === 'user') return 'bg-blue-500/[0.06] border border-blue-400/[0.08]'
   return 'bg-white/[0.03] border border-white/[0.04]'
 }
 
 function getLabelColor(row: { isQuestion: boolean; speaker: string }) {
   if (row.isQuestion) return 'text-amber-400/70'
-  if (row.speaker === 'user') return 'text-cyan-400/70'
+  if (row.speaker === 'user') return 'text-blue-400/70'
   return 'text-white/40'
 }

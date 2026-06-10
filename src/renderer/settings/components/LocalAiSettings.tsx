@@ -27,7 +27,7 @@ function statusTone(availability: LocalAiProviderStatus['availability']): string
     case 'available':
       return 'border-emerald-400/18 bg-emerald-400/7 text-emerald-300/80'
     case 'installable':
-      return 'border-cyan-400/18 bg-cyan-400/7 text-cyan-300/80'
+      return 'border-blue-400/18 bg-blue-400/7 text-blue-300/80'
     case 'failed':
       return 'border-red-400/18 bg-red-400/7 text-red-300/80'
     default:
@@ -107,7 +107,7 @@ function WhisperRow({
         onClick={() => repairable ? onInstall(provider.id) : installed ? onRemove(provider.id) : onInstall(provider.id)}
         className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[10.5px] font-medium transition-colors ${
           repairable || (installed && canRemove) || (canInstall && installable)
-            ? 'border-cyan-400/15 bg-cyan-400/6 text-cyan-300/75 hover:bg-cyan-400/10'
+            ? 'border-blue-400/15 bg-blue-400/6 text-blue-300/75 hover:bg-blue-400/10'
             : 'border-white/5 bg-white/3 text-white/22'
         }`}
       >
@@ -203,10 +203,10 @@ export default function LocalAiSettings(): React.JSX.Element {
         </h3>
       </div>
 
-      <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
+      <div className="glass-card rounded-2xl p-7 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Shield size={13} className="text-cyan-300/45" />
+            <Shield size={13} className="text-blue-300/45" />
             <div>
               <div className="text-[12.5px] text-white/66">Machine tier</div>
               <div className="text-[10.5px] text-white/30">
@@ -234,7 +234,7 @@ export default function LocalAiSettings(): React.JSX.Element {
               value={config?.sttProvider ?? 'deepgram'}
               disabled={!config || pending}
               onChange={(e) => void updateConfig({ sttProvider: e.target.value as SttProviderId })}
-              className="input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-3 py-2.5 text-[12.5px] text-white/75 focus:border-cyan-500/25 focus:outline-none transition-all disabled:opacity-45"
+              className="input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-3 py-2.5 text-[12.5px] text-white/75 focus:border-blue-500/25 focus:outline-none transition-all disabled:opacity-45"
             >
               {sttProviders.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -252,7 +252,7 @@ export default function LocalAiSettings(): React.JSX.Element {
               value={config?.ttsProvider ?? 'deepgram'}
               disabled={!config || pending}
               onChange={(e) => void updateConfig({ ttsProvider: e.target.value as TtsProviderId })}
-              className="input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-3 py-2.5 text-[12.5px] text-white/75 focus:border-cyan-500/25 focus:outline-none transition-all disabled:opacity-45"
+              className="input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-3 py-2.5 text-[12.5px] text-white/75 focus:border-blue-500/25 focus:outline-none transition-all disabled:opacity-45"
             >
               {ttsProviders.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -273,7 +273,7 @@ export default function LocalAiSettings(): React.JSX.Element {
               Model downloads
             </span>
             {config?.allowModelDownloads ? (
-              <ToggleRight size={25} className="text-cyan-400" />
+              <ToggleRight size={25} className="text-blue-400" />
             ) : (
               <ToggleLeft size={25} className="text-white/28" />
             )}

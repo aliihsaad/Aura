@@ -1,23 +1,67 @@
 @import "tailwindcss";
+@import '@fontsource-variable/inter';
+
+/* ── Aura design tokens — deep navy-indigo base, electric blue / violet
+   aurora accents (Phase 3 locked direction) ─────────────────────────── */
+@theme {
+  --font-sans: 'Inter Variable', Inter, -apple-system, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+}
 
 :root {
-  --bg-base: #08090c;
-  --bg-sidebar: #0c0d11;
+  --bg-base: #060710;
+  --bg-sidebar: rgba(11, 13, 26, 0.6);
   --bg-card: rgba(255, 255, 255, 0.022);
   --bg-card-hover: rgba(255, 255, 255, 0.04);
-  --border-subtle: rgba(255, 255, 255, 0.045);
-  --border-active: rgba(34, 211, 238, 0.2);
-  --accent: #22d3ee;
-  --accent-glow: rgba(34, 211, 238, 0.12);
+  --border-subtle: rgba(124, 144, 255, 0.07);
+  --border-active: rgba(77, 124, 254, 0.25);
+  --accent: #4d7cfe;
+  --accent-glow: rgba(77, 124, 254, 0.14);
 }
 
 body {
   margin: 0;
   padding: 0;
   background: var(--bg-base);
-  font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Aurora background field — gives the glass something real to refract.
+   Fixed, blurred radial pools of electric blue / violet / teal drifting
+   very slowly behind every panel. */
+.aurora-field {
+  position: relative;
+  isolation: isolate;
+}
+.aurora-field::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 30% at 18% 12%, rgba(77, 124, 254, 0.16) 0%, transparent 70%),
+    radial-gradient(34% 30% at 85% 25%, rgba(139, 92, 246, 0.13) 0%, transparent 70%),
+    radial-gradient(40% 34% at 70% 88%, rgba(45, 212, 191, 0.08) 0%, transparent 70%),
+    radial-gradient(30% 26% at 30% 80%, rgba(110, 168, 255, 0.09) 0%, transparent 70%);
+  filter: blur(40px);
+  animation: aurora-drift 36s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  from { transform: translate3d(-2%, -1.5%, 0) scale(1); }
+  to { transform: translate3d(2%, 1.5%, 0) scale(1.06); }
+}
+
+/* Glass card surface for dashboard panels */
+.glass-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.012) 100%);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(124, 144, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 14px 40px -18px rgba(3, 4, 12, 0.8);
 }
 
 /* Custom scrollbar */
@@ -53,27 +97,27 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--accent);
   cursor: pointer;
   border: 3px solid var(--bg-base);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.35), 0 0 4px rgba(34, 211, 238, 0.2);
+  box-shadow: 0 0 12px rgba(77, 124, 254, 0.4), 0 0 4px rgba(77, 124, 254, 0.25);
   transition: box-shadow 0.2s ease;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.5), 0 0 6px rgba(34, 211, 238, 0.3);
+  box-shadow: 0 0 16px rgba(77, 124, 254, 0.55), 0 0 6px rgba(77, 124, 254, 0.35);
 }
 
 /* Selection color */
 ::selection {
-  background: rgba(34, 211, 238, 0.15);
+  background: rgba(77, 124, 254, 0.2);
 }
 
 /* Premium input focus glow */
 .input-premium:focus {
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.15), 0 0 20px rgba(34, 211, 238, 0.05);
+  box-shadow: 0 0 0 1px rgba(77, 124, 254, 0.2), 0 0 20px rgba(77, 124, 254, 0.06);
 }
 
 /* Sidebar nav item active indicator */
 .nav-active {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(34, 211, 238, 0.03));
-  border-color: rgba(34, 211, 238, 0.15);
+  background: linear-gradient(135deg, rgba(77, 124, 254, 0.1), rgba(139, 92, 246, 0.04));
+  border-color: rgba(77, 124, 254, 0.18);
 }
 
 /* Card shine effect on hover */

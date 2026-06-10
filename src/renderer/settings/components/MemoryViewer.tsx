@@ -331,7 +331,7 @@ export default function MemoryViewer() {
           <button
             onClick={() => void updateStatus(memory.id, 'resolved')}
             disabled={disabled}
-            className="rounded-lg border border-cyan-500/20 bg-cyan-500/8 px-2.5 py-1 text-[10.5px] text-cyan-300/80 transition-colors hover:bg-cyan-500/14 disabled:opacity-50"
+            className="rounded-lg border border-blue-500/20 bg-blue-500/8 px-2.5 py-1 text-[10.5px] text-blue-300/80 transition-colors hover:bg-blue-500/14 disabled:opacity-50"
           >
             Resolve
           </button>
@@ -375,7 +375,7 @@ export default function MemoryViewer() {
 
   const renderArtifactIcon = (artifact: ArtifactRecord) => {
     if (artifact.type === 'screenshot.image') {
-      return <FileImage size={12} className="text-cyan-300/70" />
+      return <FileImage size={12} className="text-blue-300/70" />
     }
 
     return <FileText size={12} className="text-white/45" />
@@ -429,7 +429,7 @@ export default function MemoryViewer() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-[18px] font-semibold text-white/90 tracking-tight">Memory</h2>
+        <h2 className="text-[30px] font-light text-white/95 tracking-[-0.02em]">Memory</h2>
         <p className="mt-1 text-[13px] text-white/35">
           Review extracted memories, inspect their source files, and archive noise before recall gets more autonomous.
         </p>
@@ -478,7 +478,7 @@ export default function MemoryViewer() {
                 onClick={() => setStatusFilter(filter.key)}
                 className={`rounded-full border px-3 py-1 text-[10.5px] uppercase tracking-wider transition-colors ${
                   statusFilter === filter.key
-                    ? 'border-cyan-400/20 bg-cyan-500/[0.08] text-cyan-300/85'
+                    ? 'border-blue-400/20 bg-blue-500/[0.08] text-blue-300/85'
                     : 'border-white/[0.06] bg-white/[0.02] text-white/40 hover:bg-white/[0.05] hover:text-white/65'
                 }`}
               >
@@ -544,7 +544,7 @@ export default function MemoryViewer() {
           </div>
           <button
             onClick={() => void runRecall()}
-            className="rounded-xl border border-cyan-400/15 bg-cyan-500/[0.08] px-4 py-2 text-[11px] text-cyan-300/80 transition-colors hover:bg-cyan-500/[0.12]"
+            className="rounded-xl border border-blue-400/15 bg-blue-500/[0.08] px-4 py-2 text-[11px] text-blue-300/80 transition-colors hover:bg-blue-500/[0.12]"
           >
             Search Recall
           </button>
@@ -569,7 +569,7 @@ export default function MemoryViewer() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-cyan-500/[0.12] bg-cyan-500/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-wider text-cyan-300/80">
+                        <span className="rounded-full border border-blue-500/[0.12] bg-blue-500/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-300/80">
                           {result.kind}
                         </span>
                         <span className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/40">
@@ -731,7 +731,7 @@ export default function MemoryViewer() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[11px] text-white/72">
-                      <Link2 size={12} className="text-cyan-300/70" />
+                      <Link2 size={12} className="text-blue-300/70" />
                       <span className="truncate">{entity.name}</span>
                     </div>
                     <div className="mt-1 text-[10.5px] text-white/25">
@@ -800,7 +800,7 @@ export default function MemoryViewer() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-cyan-500/[0.12] bg-cyan-500/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-wider text-cyan-300/80">
+                        <span className="rounded-full border border-blue-500/[0.12] bg-blue-500/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-300/80">
                           {memory.type}
                         </span>
                         <span className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/40">

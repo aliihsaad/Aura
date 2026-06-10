@@ -265,7 +265,7 @@ export default function AISuggestion({
               </span>
             )}
             {routingReason && (
-              <span className="rounded-md border border-cyan-400/[0.08] bg-cyan-400/[0.05] px-2 py-0.5 text-[9.5px] font-medium tracking-wide text-cyan-300/55">
+              <span className="rounded-md border border-blue-400/[0.08] bg-blue-400/[0.05] px-2 py-0.5 text-[9.5px] font-medium tracking-wide text-blue-300/55">
                 {routingReason}
               </span>
             )}
@@ -292,7 +292,7 @@ export default function AISuggestion({
                   aria-pressed={speaking}
                   className={`rounded-lg p-2 transition-colors disabled:opacity-25 ${
                     speaking
-                      ? 'bg-cyan-500/[0.16] text-cyan-200 hover:bg-cyan-500/[0.22]'
+                      ? 'bg-blue-500/[0.16] text-blue-200 hover:bg-blue-500/[0.22]'
                       : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/80'
                   }`}
                   title={speaking ? 'Stop' : 'Read aloud'}
@@ -363,17 +363,17 @@ export default function AISuggestion({
         {/* Answer section */}
         <div className="mx-5 mt-3 mb-5 flex min-h-0 flex-1 flex-col rounded-xl border border-white/[0.04] bg-white/[0.02] px-5 py-4">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles size={12} className="text-cyan-400/50" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-cyan-400/50">
+            <Sparkles size={12} className="text-blue-400/50" />
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-400/50">
               Detail
             </span>
             {isStreaming && (
-              <span className="text-[11px] text-cyan-400/60">Generating...</span>
+              <span className="text-[11px] text-blue-400/60">Generating...</span>
             )}
             {autoScrollPaused && (
               <button
                 onClick={resumeAutoScroll}
-                className="ml-auto rounded-md border border-cyan-400/10 bg-cyan-400/[0.06] px-2 py-1 text-[10px] font-medium text-cyan-300/70 transition-colors hover:bg-cyan-400/[0.1] hover:text-cyan-200"
+                className="ml-auto rounded-md border border-blue-400/10 bg-blue-400/[0.06] px-2 py-1 text-[10px] font-medium text-blue-300/70 transition-colors hover:bg-blue-400/[0.1] hover:text-blue-200"
               >
                 Follow live
               </button>
@@ -393,7 +393,7 @@ export default function AISuggestion({
                 detailCapabilities={detailCapabilities}
               />
               {isStreaming && (
-                <span className="inline-block h-4 w-0.5 animate-pulse rounded-sm bg-cyan-400 align-middle ml-1" />
+                <span className="inline-block h-4 w-0.5 animate-pulse rounded-sm bg-blue-400 align-middle ml-1" />
               )}
             </div>
           </div>

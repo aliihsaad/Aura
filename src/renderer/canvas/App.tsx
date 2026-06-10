@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import type { Widget } from '@shared/types'
+import type { AgentPresenceState, Widget } from '@shared/types'
 import WidgetShell from './components/WidgetShell'
 import Toast from './components/Toast'
-import Bubble from './components/Bubble'
+import GlassReplyPanel from './components/GlassReplyPanel'
 import Panel from './components/Panel'
+import OrbPresence from './components/OrbPresence'
 import { VoiceAudioPlayer } from './voice-audio-player'
 
 export default function App() {
   const [widgets, setWidgets] = useState<Widget[]>([])
+  const [presenceState, setPresenceState] = useState<AgentPresenceState>('sleeping')
   const [bubbleStyle, setBubbleStyle] = useState<{ fontSize: number; width: number }>({
     fontSize: 13,
     width: 320,
@@ -17,6 +19,13 @@ export default function App() {
   useEffect(() => {
     const cleanup = window.api?.onWidgetState?.((newWidgets: Widget[]) => {
       setWidgets(newWidgets)
+    })
+    return () => cleanup?.()
+  }, [])
+
+  useEffect(() => {
+    const cleanup = window.api?.onPresenceState?.((state: AgentPresenceState) => {
+      setPresenceState(state)
     })
     return () => cleanup?.()
   }, [])
@@ -130,7 +139,7 @@ export default function App() {
             className="pointer-events-auto z-40"
           >
             <div data-widget>
-              <Bubble
+              <GlassReplyPanel
                 id={w.id}
                 message={String(w.props.message ?? '')}
                 urgency={(w.props.urgency as any) ?? 'low'}
@@ -174,6 +183,20 @@ export default function App() {
         </WidgetShell>
       ))}
 
+      {/* Aura's ambient orb presence — always on the canvas, draggable. */}
+      <WidgetShell
+        id="aura-orb"
+        draggable
+        initialPosition={{
+          x: Math.max(24, window.innerWidth - 190),
+          y: Math.max(24, window.innerHeight - 220),
+        }}
+        className="pointer-events-auto z-20"
+      >
+        <div data-widget data-drag-handle className="cursor-grab active:cursor-grabbing">
+          <OrbPresence state={presenceState} />
+        </div>
+      </WidgetShell>
     </div>
   )
 }

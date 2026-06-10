@@ -126,7 +126,7 @@ export default function VaultSyncSettings() {
           <div className="text-[10.5px] text-white/25 truncate">{tool.description}</div>
         </div>
         <button onClick={() => void toggleTool(tool.name)} className="shrink-0 text-white/60 hover:text-white/80 transition-colors">
-          {enabled ? <ToggleRight size={22} className="text-cyan-400" /> : <ToggleLeft size={22} />}
+          {enabled ? <ToggleRight size={22} className="text-blue-400" /> : <ToggleLeft size={22} />}
         </button>
       </div>
     )
@@ -136,12 +136,12 @@ export default function VaultSyncSettings() {
     <div>
       <div className="flex items-center gap-2 mb-4">
         <Link2 size={14} className="text-white/25" />
-        <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+        <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
           Memory &amp; Sync
         </h3>
       </div>
 
-      <div className="rounded-2xl bg-white/2 border border-white/4.5 p-5 space-y-5">
+      <div className="glass-card rounded-2xl p-7 space-y-5">
         {/* vault-memory */}
         <div>
           <div className="flex items-center justify-between">
@@ -159,7 +159,7 @@ export default function VaultSyncSettings() {
               onClick={() => void setServerEnabled('vaultMemoryEnabled', !memoryEnabled)}
               className="text-white/60 hover:text-white/80 transition-colors"
             >
-              {memoryEnabled ? <ToggleRight size={28} className="text-cyan-400" /> : <ToggleLeft size={28} />}
+              {memoryEnabled ? <ToggleRight size={28} className="text-blue-400" /> : <ToggleLeft size={28} />}
             </button>
           </div>
           {memoryEnabled && memoryTools.length > 0 && (
@@ -194,7 +194,7 @@ export default function VaultSyncSettings() {
               onClick={() => void setServerEnabled('vaultCollabEnabled', !collabEnabled)}
               className="text-white/60 hover:text-white/80 transition-colors"
             >
-              {collabEnabled ? <ToggleRight size={28} className="text-cyan-400" /> : <ToggleLeft size={28} />}
+              {collabEnabled ? <ToggleRight size={28} className="text-blue-400" /> : <ToggleLeft size={28} />}
             </button>
           </div>
           {collabEnabled && (
@@ -209,7 +209,7 @@ export default function VaultSyncSettings() {
                 <button
                   onClick={() => void drainNow()}
                   disabled={draining || collabState !== 'connected'}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-cyan-400/80 bg-cyan-500/[0.06] border border-cyan-500/[0.1] hover:bg-cyan-500/[0.12] disabled:opacity-40 transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-blue-400/80 bg-blue-500/[0.06] border border-blue-500/[0.1] hover:bg-blue-500/[0.12] disabled:opacity-40 transition-all"
                 >
                   <RefreshCw size={11} className={draining ? 'animate-spin' : ''} />
                   Drain attention

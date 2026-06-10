@@ -106,13 +106,13 @@ export default function SessionPresetBar({
           <button
             type="button"
             onClick={() => setSavingName('')}
-            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-white/[0.08] bg-transparent px-2 py-1 text-[11px] font-medium text-white/40 transition-all hover:border-cyan-500/25 hover:text-cyan-300/80"
+            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-white/[0.08] bg-transparent px-2 py-1 text-[11px] font-medium text-white/40 transition-all hover:border-blue-500/25 hover:text-blue-300/80"
           >
             <Plus size={10} />
             Save current as preset
           </button>
         ) : (
-          <div className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/25 bg-cyan-500/[0.06] px-1.5 py-0.5">
+          <div className="inline-flex items-center gap-1 rounded-lg border border-blue-500/25 bg-blue-500/[0.06] px-1.5 py-0.5">
             <input
               autoFocus
               value={savingName}
@@ -129,7 +129,7 @@ export default function SessionPresetBar({
               type="button"
               onClick={() => void handleSave()}
               disabled={!(savingName ?? '').trim()}
-              className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-cyan-300 hover:bg-cyan-500/15 disabled:opacity-40"
+              className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-blue-300 hover:bg-blue-500/15 disabled:opacity-40"
             >
               Save
             </button>

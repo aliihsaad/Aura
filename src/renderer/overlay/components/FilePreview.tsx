@@ -908,7 +908,7 @@ export default function FilePreview() {
           </button>
           <button
             onClick={toggleScriptPlayback}
-            className="rounded-xl bg-cyan-400/15 p-2 text-cyan-200 transition-colors hover:bg-cyan-400/25"
+            className="rounded-xl bg-blue-400/15 p-2 text-blue-200 transition-colors hover:bg-blue-400/25"
             title={scriptPlaying ? 'Pause' : 'Play'}
           >
             {scriptPlaying ? <Pause size={16} /> : <Play size={16} />}
@@ -925,7 +925,7 @@ export default function FilePreview() {
             onClick={toggleScriptVoiceTracking}
             className={`rounded-xl p-2 transition-colors ${
               scriptVoiceTracking
-                ? 'bg-cyan-400/15 text-cyan-200'
+                ? 'bg-blue-400/15 text-blue-200'
                 : 'text-white/65 hover:bg-white/[0.08] hover:text-white'
             }`}
             title="Track mic"
@@ -970,7 +970,7 @@ export default function FilePreview() {
                 <span
                   className={`transition-colors duration-150 ${
                     index === Math.min(scriptWordIndex, currentLineWords.length - 1)
-                      ? 'text-cyan-200 drop-shadow-[0_0_18px_rgba(103,232,249,0.72)]'
+                      ? 'text-blue-200 drop-shadow-[0_0_18px_rgba(103,232,249,0.72)]'
                       : index < scriptWordIndex
                         ? 'text-white'
                         : 'text-white/58'
@@ -1004,7 +1004,7 @@ export default function FilePreview() {
       <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[rgba(10,12,16,0.92)] shadow-[0_16px_64px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
         <div className="drag-handle flex items-center justify-between border-b border-white/[0.04] bg-white/[0.02] px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <FileText size={14} className="text-cyan-400/50" />
+            <FileText size={14} className="text-blue-400/50" />
             <span className="text-[11px] font-semibold uppercase tracking-widest text-white/30">
               Preview
             </span>
@@ -1017,7 +1017,7 @@ export default function FilePreview() {
                   onClick={toggleScriptMode}
                   className={`rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
                     scriptMode
-                      ? 'bg-cyan-500/[0.14] text-cyan-300'
+                      ? 'bg-blue-500/[0.14] text-blue-300'
                       : 'text-white/45 hover:bg-white/[0.05] hover:text-white/75'
                   }`}
                   title="Toggle script player"
@@ -1036,7 +1036,7 @@ export default function FilePreview() {
                     </button>
                     <button
                       onClick={toggleScriptPlayback}
-                      className="rounded-md bg-cyan-500/[0.12] p-1.5 text-cyan-300 transition-colors hover:bg-cyan-500/[0.18]"
+                      className="rounded-md bg-blue-500/[0.12] p-1.5 text-blue-300 transition-colors hover:bg-blue-500/[0.18]"
                       title={scriptPlaying ? 'Pause script' : 'Play script'}
                     >
                       {scriptPlaying ? <Pause size={13} /> : <Play size={13} />}
@@ -1060,7 +1060,7 @@ export default function FilePreview() {
                       onClick={toggleScriptVoiceTracking}
                       className={`rounded-md p-1.5 transition-colors ${
                         scriptVoiceTracking
-                          ? 'bg-cyan-500/[0.12] text-cyan-300'
+                          ? 'bg-blue-500/[0.12] text-blue-300'
                           : 'text-white/50 hover:text-white/80'
                       }`}
                       title="Track script position from mic transcript"
@@ -1125,16 +1125,16 @@ export default function FilePreview() {
                 onClick={() => setActiveTabId(file.id)}
                 className={`no-drag group flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all duration-150 ${
                   activeTabId === file.id
-                    ? 'bg-cyan-500/[0.08] text-cyan-400 border border-cyan-500/[0.12]'
+                    ? 'bg-blue-500/[0.08] text-blue-400 border border-blue-500/[0.12]'
                     : 'text-white/50 hover:bg-white/[0.04] hover:text-white/70 border border-transparent'
                 }`}
               >
                 {file.isConverting ? (
-                  <Loader2 size={11} className="animate-spin text-cyan-400/60" />
+                  <Loader2 size={11} className="animate-spin text-blue-400/60" />
                 ) : file.kind === 'image' ? (
-                  <ImageIcon size={11} className="text-cyan-400/60" />
+                  <ImageIcon size={11} className="text-blue-400/60" />
                 ) : (
-                  <FileText size={11} className="text-cyan-400/60" />
+                  <FileText size={11} className="text-blue-400/60" />
                 )}
                 <span className="max-w-[140px] truncate">{file.name}</span>
                 <span
@@ -1164,16 +1164,16 @@ export default function FilePreview() {
               <div
                 className={`flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed p-12 transition-all duration-200 ${
                   isDragOver
-                    ? 'border-cyan-400/40 bg-cyan-400/[0.04]'
+                    ? 'border-blue-400/40 bg-blue-400/[0.04]'
                     : 'border-white/[0.08] bg-white/[0.01]'
                 }`}
               >
                 <FileText
                   size={40}
-                  className={`transition-colors ${isDragOver ? 'text-cyan-400/50' : 'text-white/15'}`}
+                  className={`transition-colors ${isDragOver ? 'text-blue-400/50' : 'text-white/15'}`}
                 />
                 <div className="text-center">
-                  <p className={`text-[14px] font-medium transition-colors ${isDragOver ? 'text-cyan-400/70' : 'text-white/40'}`}>
+                  <p className={`text-[14px] font-medium transition-colors ${isDragOver ? 'text-blue-400/70' : 'text-white/40'}`}>
                     Drop files here
                   </p>
                   <p className="mt-1.5 text-[12px] text-white/25">
@@ -1185,7 +1185,7 @@ export default function FilePreview() {
           ) : activeFile.isConverting ? (
             <div className="flex h-full items-center justify-center p-8">
               <div className="flex flex-col items-center gap-3">
-                <Loader2 size={28} className="animate-spin text-cyan-400/60" />
+                <Loader2 size={28} className="animate-spin text-blue-400/60" />
                 <p className="text-[13px] font-medium text-white/40">Preparing preview...</p>
               </div>
             </div>
@@ -1215,8 +1215,8 @@ export default function FilePreview() {
                   {activeFile.sourceLabel}
                 </p>
               )}
-              <div className="mb-5 rounded-2xl border border-cyan-400/[0.14] bg-cyan-400/[0.04] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.28)]">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/50">
+              <div className="mb-5 rounded-2xl border border-blue-400/[0.14] bg-blue-400/[0.04] p-5 shadow-[0_18px_48px_rgba(0,0,0,0.28)]">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/50">
                   {scriptVoiceTracking
                     ? `Tracking mic${lastVoiceMatch ? ` · ${Math.round(lastVoiceMatch.score * 100)}%` : ''}`
                     : 'Now reading'}
@@ -1237,13 +1237,13 @@ export default function FilePreview() {
                     }}
                     className={`no-drag block w-full rounded-xl border px-4 py-3 text-left leading-relaxed transition-all ${
                       index === scriptLineIndex
-                        ? 'border-cyan-400/[0.24] bg-cyan-400/[0.08] text-white shadow-[0_10px_32px_rgba(34,211,238,0.08)]'
+                        ? 'border-blue-400/[0.24] bg-blue-400/[0.08] text-white shadow-[0_10px_32px_rgba(34,211,238,0.08)]'
                         : index < scriptLineIndex
                           ? 'border-transparent bg-white/[0.015] text-white/28'
                           : 'border-transparent bg-white/[0.025] text-white/58 hover:bg-white/[0.045] hover:text-white/78'
                     }`}
                   >
-                    <span className="mr-3 text-[0.65em] font-semibold uppercase tracking-[0.18em] text-cyan-300/35">
+                    <span className="mr-3 text-[0.65em] font-semibold uppercase tracking-[0.18em] text-blue-300/35">
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     {line}
@@ -1268,9 +1268,9 @@ export default function FilePreview() {
 
           {showDragOverlay && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-[rgba(10,12,16,0.85)] backdrop-blur-sm pointer-events-none">
-              <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-cyan-400/40 bg-cyan-400/[0.04] p-10">
-                <FileText size={36} className="text-cyan-400/50" />
-                <p className="text-[14px] font-medium text-cyan-400/70">Drop to add files</p>
+              <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-blue-400/40 bg-blue-400/[0.04] p-10">
+                <FileText size={36} className="text-blue-400/50" />
+                <p className="text-[14px] font-medium text-blue-400/70">Drop to add files</p>
               </div>
             </div>
           )}

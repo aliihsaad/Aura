@@ -34,7 +34,7 @@ function MarkdownImage({ src, alt }: { src?: string; alt?: string }): React.JSX.
           <a
             href={url}
             onClick={(e) => { e.preventDefault(); void window.api.openExternal(url) }}
-            className="text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+            className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
           >
             {url.length > 60 ? url.slice(0, 57) + '…' : url}
           </a>
@@ -134,7 +134,7 @@ export default function RichContent({
               <a
                 href={url}
                 onClick={(e) => { e.preventDefault(); void window.api.openExternal(url) }}
-                className="text-cyan-400 hover:text-cyan-300 underline decoration-cyan-400/40 hover:decoration-cyan-300 cursor-pointer inline-flex items-baseline gap-0.5"
+                className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/40 hover:decoration-blue-300 cursor-pointer inline-flex items-baseline gap-0.5"
               >
                 {children}
                 <ExternalLink size={11} className="opacity-60 translate-y-px" />

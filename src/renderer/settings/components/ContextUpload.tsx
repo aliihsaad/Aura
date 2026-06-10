@@ -21,7 +21,7 @@ import {
 import type { ProfileContext } from '@shared/types'
 
 const inputClass =
-  'input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-4 py-2.5 text-[13px] text-white/80 placeholder:text-white/15 focus:border-cyan-500/25 focus:outline-none transition-all'
+  'input-premium w-full rounded-xl bg-white/[0.025] border border-white/6 px-4 py-2.5 text-[13px] text-white/80 placeholder:text-white/15 focus:border-blue-500/25 focus:outline-none transition-all'
 
 const emptyProfile: ProfileContext = {
   name: '',
@@ -148,7 +148,7 @@ export default function ContextUpload() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h2 className="text-[18px] font-semibold text-white/90 tracking-tight">Profile</h2>
+        <h2 className="text-[30px] font-light text-white/95 tracking-[-0.02em]">Profile</h2>
         <p className="text-[13px] text-white/35 mt-1">
           Universal facts about you, loaded into every companion session.
         </p>
@@ -270,7 +270,7 @@ export default function ContextUpload() {
         className={`w-full rounded-xl py-3.5 text-[13px] font-semibold transition-all duration-250 flex items-center justify-center gap-2 btn-press ${
           saved
             ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/20 shadow-[0_0_20px_rgba(52,211,153,0.08)]'
-            : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/15 hover:bg-cyan-500/15 hover:border-cyan-500/25 hover:shadow-[0_0_20px_rgba(34,211,238,0.08)]'
+            : 'bg-blue-500/10 text-blue-400 border border-blue-500/15 hover:bg-blue-500/15 hover:border-blue-500/25 hover:shadow-[0_0_20px_rgba(34,211,238,0.08)]'
         }`}
       >
         {saved ? (
@@ -288,7 +288,7 @@ export default function ContextUpload() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Folder size={14} className="text-white/25" />
-            <h3 className="text-[12px] font-semibold text-white/50 uppercase tracking-wider">
+            <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
               Context Files
             </h3>
           </div>
