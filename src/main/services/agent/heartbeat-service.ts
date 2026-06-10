@@ -67,7 +67,7 @@ interface HeartbeatDeps {
   /** Optional cost-tracker sink — heartbeat forwards every LLM token-usage
    * report so the session-level meter stays accurate. */
   recordUsage?: (model: string, promptTokens: number, completionTokens: number) => void
-  /** Returns a current-state summary of what Whisphry actually does behind
+  /** Returns a current-state summary of what Aura actually does behind
    * the scenes — used so the agent doesn't deny features (like the
    * session-brain screenshot loop) that are actively running. */
   getCapabilitiesSummary?: () => string
@@ -104,7 +104,7 @@ function loadSoulPrompt(): string {
     const soulPath = path.join(__dirname, '../../shared/soul.md')
     soulPrompt = fs.readFileSync(soulPath, 'utf-8')
   } catch {
-    soulPrompt = 'You are Whisphry, a local memory-native desktop companion.'
+    soulPrompt = 'You are Aura, a local memory-native desktop companion.'
   }
   return soulPrompt
 }

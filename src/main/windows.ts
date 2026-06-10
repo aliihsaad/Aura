@@ -133,7 +133,7 @@ export function createSettingsWindow(): BrowserWindow {
     minWidth: 600,
     minHeight: 500,
     frame: true,
-    title: 'Whisphry',
+    title: 'Aura',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

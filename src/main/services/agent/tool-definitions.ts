@@ -1,4 +1,4 @@
-import { RecallResult, ToolDefinition, ToolExecutorFn, WhisphryMemoryType, ArtifactListFilters } from '@shared/types'
+import { RecallResult, ToolDefinition, ToolExecutorFn, AuraMemoryType, ArtifactListFilters } from '@shared/types'
 import { MemoryStore } from '../memory/memory-store'
 import { RecallService } from '../memory/recall-service'
 import { ArtifactStore } from '../memory/artifact-store'
@@ -592,7 +592,7 @@ async function executeSaveMemory(
 ): Promise<string> {
   const title = String(args.title ?? '').trim()
   const summary = String(args.summary ?? '').trim()
-  const type = String(args.type ?? '') as WhisphryMemoryType
+  const type = String(args.type ?? '') as AuraMemoryType
 
   if (!title) {
     return 'Cannot save memory: title is required.'
@@ -601,7 +601,7 @@ async function executeSaveMemory(
     return 'Cannot save memory: summary is required.'
   }
 
-  const validTypes: WhisphryMemoryType[] = ['note', 'fact', 'task', 'insight']
+  const validTypes: AuraMemoryType[] = ['note', 'fact', 'task', 'insight']
   if (!validTypes.includes(type)) {
     return `Cannot save memory: type must be one of ${validTypes.join(', ')}.`
   }
@@ -836,8 +836,8 @@ function executeSaveAnswerAsMemory(deps: ToolExecutorDeps, args: Record<string, 
     return 'No recent answer is available to save yet.'
   }
 
-  const requestedType = String(args.type ?? 'insight') as WhisphryMemoryType
-  const validTypes: WhisphryMemoryType[] = ['note', 'fact', 'task', 'insight']
+  const requestedType = String(args.type ?? 'insight') as AuraMemoryType
+  const validTypes: AuraMemoryType[] = ['note', 'fact', 'task', 'insight']
   const type = validTypes.includes(requestedType) ? requestedType : 'insight'
   const title = String(args.title ?? '').trim() || latest.question.trim() || 'Saved answer'
   const summary = latest.answer.trim().replace(/\s+/g, ' ').slice(0, 220)

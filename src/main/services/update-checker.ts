@@ -1,6 +1,6 @@
 import { app, net } from 'electron'
 
-const GITHUB_RELEASE_URL = 'https://api.github.com/repos/aliihsaad/whisphry/releases/latest'
+const GITHUB_RELEASE_URL = 'https://api.github.com/repos/aliihsaad/Aura/releases/latest'
 
 export interface UpdateInfo {
   updateAvailable: boolean
@@ -23,7 +23,7 @@ function compareVersions(current: string, latest: string): boolean {
 export async function checkForUpdates(): Promise<UpdateInfo | null> {
   try {
     const response = await net.fetch(GITHUB_RELEASE_URL, {
-      headers: { 'User-Agent': 'whisphry-update-checker' },
+      headers: { 'User-Agent': 'aura-update-checker' },
     })
 
     if (!response.ok) return null

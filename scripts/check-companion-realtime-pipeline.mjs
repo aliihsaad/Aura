@@ -106,7 +106,11 @@ assertIncludes(
 
 assertIncludes(
   'src/main/services/realtime/freellmapi-realtime-client.ts',
-  'instructions: cleanValue(this.options.instructions) || undefined',
+  'instructions: this.effectiveInstructions() || undefined',
+  // reconnect context injection (session-brain summary re-seeds rotated models)
+  'getReconnectContext?: () => string',
+  'private withReconnectContext(baseInstructions: string): string',
+  'LIVE_RECONNECT_BACKOFF_FACTOR',
   'Realtime session mint must forward optional instructions.'
 )
 

@@ -15,7 +15,7 @@ export class WebSearchService {
   private static readonly MAX_LIMIT = 8
   private static readonly REQUEST_TIMEOUT_MS = 12_000
   private static readonly USER_AGENT =
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Whisphry/1.0'
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Aura/1.0'
 
   async search(query: string, limit = WebSearchService.DEFAULT_LIMIT): Promise<WebSearchResult> {
     const normalized = query.trim()

@@ -153,7 +153,7 @@ export class WhisperCppSttService extends STTService {
     const resolved = this.resolveRuntime()
     if (!resolved.ok) throw new Error(resolved.reason)
 
-    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'whisphry-whisper-'))
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aura-whisper-'))
     const inputPath = path.join(tmpRoot, 'speech.wav')
     const outputBase = path.join(tmpRoot, 'transcript')
     const outputPath = `${outputBase}.txt`

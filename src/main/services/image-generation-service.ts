@@ -57,7 +57,7 @@ export class ImageGenerationService {
           authorization: `Bearer ${this.apiKey}`,
           'content-type': 'application/json',
           'HTTP-Referer': 'http://localhost',
-          'X-Title': 'Whisphry',
+          'X-Title': 'Aura',
         },
         body: JSON.stringify({
           model: this.model,

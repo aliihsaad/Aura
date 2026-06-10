@@ -1,4 +1,4 @@
-import { EntityRecord, MemoryRecord, WhisphryRelationType } from '@shared/types'
+import { EntityRecord, MemoryRecord, AuraRelationType } from '@shared/types'
 import { EntityExtractionService } from './entity-extraction-service'
 import { EntityStore } from './entity-store'
 import { RelationStore } from './relation-store'
@@ -44,7 +44,7 @@ export class EntityGraphService {
   }
 }
 
-function inferRelationType(entity: EntityRecord): WhisphryRelationType {
+function inferRelationType(entity: EntityRecord): AuraRelationType {
   if (entity.type === 'company' || entity.type === 'topic') {
     return 'about'
   }

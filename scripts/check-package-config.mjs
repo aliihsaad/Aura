@@ -4,9 +4,9 @@ import fs from 'node:fs'
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'))
 const build = pkg.build || {}
 
-assert.equal(pkg.name, 'whisphry')
-assert.equal(build.productName, 'Whisphry')
-assert.equal(build.appId, 'com.whisphry.desktop')
+assert.equal(pkg.name, 'aura-desktop')
+assert.equal(build.productName, 'Aura')
+assert.equal(build.appId, 'com.aura.desktop')
 assert.equal(build.asar, true)
 assert.ok(String(pkg.description || '').includes('desktop companion'))
 assert.ok(Array.isArray(build.files), 'build.files must be explicit')
@@ -68,6 +68,6 @@ assert.equal(build.nsis?.oneClick, false)
 assert.equal(build.nsis?.allowToChangeInstallationDirectory, true)
 assert.equal(build.nsis?.artifactName, '${productName}-Setup-${version}-${arch}.${ext}')
 assert.equal(build.portable?.artifactName, '${productName}-Portable-${version}-${arch}.${ext}')
-assert.equal(build.nsis?.shortcutName, 'Whisphry')
+assert.equal(build.nsis?.shortcutName, 'Aura')
 
 console.log('check-package-config: installer identity and model-pack guardrails OK')

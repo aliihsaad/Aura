@@ -106,7 +106,7 @@ export default function SessionControl({ isSessionActive }: SessionControlProps)
               <p className="text-[11.5px] text-white/35 mt-0.5">
                 {isSessionActive
                   ? 'Capturing activity and generating responses in real-time'
-                  : 'Start a session to begin using Whisphry'}
+                  : 'Start a session to begin using Aura'}
               </p>
             </div>
           </div>

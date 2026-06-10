@@ -5,12 +5,12 @@ import { randomUUID } from 'crypto'
 import {
   ArtifactListFilters,
   ArtifactRecord,
-  WhisphryArtifactType,
-  WhisphryEventType,
+  AuraArtifactType,
+  AuraEventType,
 } from '@shared/types'
 
 interface CreateArtifactParams {
-  type: WhisphryArtifactType
+  type: AuraArtifactType
   createdAt?: number
   sessionId?: string
   sessionFolderName?: string
@@ -18,7 +18,7 @@ interface CreateArtifactParams {
   relativePath?: string
   mimeType?: string
   sourceEventId?: string
-  sourceEventType?: WhisphryEventType
+  sourceEventType?: AuraEventType
   metadata?: Record<string, string | number | boolean | null>
 }
 
@@ -139,7 +139,7 @@ export class ArtifactStore {
 
   private matchesFilters(
     artifact: ArtifactRecord,
-    types?: WhisphryArtifactType[],
+    types?: AuraArtifactType[],
     sessionFolderName?: string,
     query?: string
   ): boolean {

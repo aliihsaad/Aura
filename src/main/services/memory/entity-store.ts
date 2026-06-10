@@ -5,11 +5,11 @@ import { randomUUID } from 'crypto'
 import {
   EntityListFilters,
   EntityRecord,
-  WhisphryEntityType,
+  AuraEntityType,
 } from '@shared/types'
 
 interface CreateEntityParams {
-  type: WhisphryEntityType
+  type: AuraEntityType
   name: string
   normalizedName: string
   createdAt?: number
@@ -110,7 +110,7 @@ export class EntityStore {
   }
 
   private getLatestByTypeAndNormalizedName(
-    type: WhisphryEntityType,
+    type: AuraEntityType,
     normalizedName: string
   ): EntityRecord | null {
     for (const file of this.getPartitionFilesDescending()) {
@@ -150,7 +150,7 @@ export class EntityStore {
 
   private matchesFilters(
     entity: EntityRecord,
-    types?: WhisphryEntityType[],
+    types?: AuraEntityType[],
     query?: string
   ): boolean {
     if (types && types.length > 0 && !types.includes(entity.type)) {

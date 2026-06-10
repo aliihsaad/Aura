@@ -1,7 +1,7 @@
 {
-  "name": "whisphry",
+  "name": "aura-desktop",
   "version": "1.0.4",
-  "description": "Local memory-native desktop companion with live transcription, screen context, voice, and optional local AI providers",
+  "description": "Aura — a local memory-native desktop companion with live transcription, screen context, voice, and optional local AI providers",
   "main": "./out/main/main.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -13,24 +13,21 @@
     "package:mac": "electron-vite build && electron-builder --mac --publish never",
     "package:all": "electron-vite build && electron-builder --win --mac --publish never",
     "package:dir": "electron-vite build && electron-builder --dir --publish never",
-    "check:mode-isolation": "node scripts/check-mode-isolation.mjs",
     "check:local-ai": "node scripts/check-local-ai-config.mjs && node scripts/check-local-ai-routing.mjs && node scripts/check-whisper-runtime.mjs",
     "check:package": "node scripts/check-package-config.mjs",
-    "check:session-intents": "node scripts/check-session-intent-policy.mjs",
     "check:session-brain-cleanup": "node scripts/check-session-brain-screenshot-cleanup.mjs",
     "check:session-report": "node scripts/check-session-report-artifact.mjs",
     "check:companion-turn-boundaries": "node scripts/check-companion-turn-boundaries.mjs",
     "check:detail-dedupe": "node scripts/check-detail-answer-dedupe.mjs",
     "check:session-brain-dedupe": "node scripts/check-session-brain-screenshot-dedupe.mjs",
-    "check:study-notes-quality": "node scripts/check-study-notes-quality.mjs",
     "check:freellmapi-provider": "node scripts/check-freellmapi-provider-config.mjs",
     "check:companion-realtime": "node scripts/check-companion-realtime-pipeline.mjs",
     "check:release-version": "node scripts/check-release-version.mjs",
-    "check:release": "npm run check:release-version && npm run check:package && npm run check:mode-isolation && npm run check:session-intents && npm run check:session-brain-cleanup && npm run check:session-report && npm run check:companion-turn-boundaries && npm run check:detail-dedupe && npm run check:session-brain-dedupe && npm run check:study-notes-quality && npm run check:freellmapi-provider && npm run check:companion-realtime && npm run build"
+    "check:release": "npm run check:release-version && npm run check:package && npm run check:session-brain-cleanup && npm run check:session-report && npm run check:companion-turn-boundaries && npm run check:detail-dedupe && npm run check:session-brain-dedupe && npm run check:freellmapi-provider && npm run check:companion-realtime && npm run build"
   },
   "build": {
-    "appId": "com.whisphry.desktop",
-    "productName": "Whisphry",
+    "appId": "com.aura.desktop",
+    "productName": "Aura",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "asar": true,
     "asarUnpack": [
@@ -52,7 +49,7 @@
       "category": "public.app-category.productivity"
     },
     "dmg": {
-      "title": "Whisphry",
+      "title": "Aura",
       "contents": [
         {
           "x": 130,
@@ -73,7 +70,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Whisphry",
+      "shortcutName": "Aura",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
     },

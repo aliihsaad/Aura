@@ -18,7 +18,7 @@ const defaultProfile: ProfileContext = {
 }
 
 const store = new Store({
-  name: 'whisphry-context',
+  name: 'aura-context',
   defaults: {
     contexts: {} as Record<string, any>,
     activeContextId: 'default',

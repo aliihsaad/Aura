@@ -4,10 +4,10 @@ import {
   MemoryRecord,
   SessionContext,
   TranscriptFinalizedEventPayload,
-  WhisphryArtifactType,
-  WhisphryEventPayload,
-  WhisphryEventSource,
-  WhisphryEventType,
+  AuraArtifactType,
+  AuraEventPayload,
+  AuraEventSource,
+  AuraEventType,
 } from '@shared/types'
 import * as path from 'path'
 import { ArtifactStore } from './artifact-store'
@@ -15,9 +15,9 @@ import { EventStore } from './event-store'
 import { ExtractionService } from './extraction-service'
 import { MemoryStore } from './memory-store'
 
-interface RecordEventParams<TPayload = WhisphryEventPayload> {
-  type: WhisphryEventType
-  source: WhisphryEventSource
+interface RecordEventParams<TPayload = AuraEventPayload> {
+  type: AuraEventType
+  source: AuraEventSource
   createdAt?: number
   sessionId?: string
   sessionFolderName?: string
@@ -25,7 +25,7 @@ interface RecordEventParams<TPayload = WhisphryEventPayload> {
 }
 
 interface RegisterArtifactParams {
-  type: WhisphryArtifactType
+  type: AuraArtifactType
   createdAt?: number
   sessionId?: string
   sessionFolderName?: string
@@ -33,7 +33,7 @@ interface RegisterArtifactParams {
   relativePath?: string
   mimeType?: string
   sourceEventId?: string
-  sourceEventType?: WhisphryEventType
+  sourceEventType?: AuraEventType
   metadata?: Record<string, string | number | boolean | null>
 }
 
@@ -47,13 +47,13 @@ export class MemoryPipelineService {
     private readonly onMemoryPersisted?: (memory: MemoryRecord) => void
   ) {}
 
-  recordEvent<TPayload = WhisphryEventPayload>(
+  recordEvent<TPayload = AuraEventPayload>(
     params: RecordEventParams<TPayload>,
     sessionContext?: SessionContext
   ): EventRecord<TPayload> | undefined {
     try {
       const event = this.eventStore.createEvent(params)
-      this.eventStore.append(event as unknown as EventRecord<WhisphryEventPayload>)
+      this.eventStore.append(event as unknown as EventRecord<AuraEventPayload>)
 
       if (event.type === 'transcript.finalized') {
         this.persistExtractedMemories(

@@ -201,14 +201,14 @@ export interface ScreenCaptureResult {
   timestamp: number
 }
 
-export type WhisphryEventType =
+export type AuraEventType =
   | 'session.started'
   | 'session.stopped'
   | 'transcript.finalized'
   | 'input.manual-requested'
   | 'capture.screenshot'
 
-export type WhisphryEventSource =
+export type AuraEventSource =
   | 'system'
   | 'transcription'
   | 'user'
@@ -239,23 +239,23 @@ export interface ScreenshotCapturedEventPayload {
   analysisRequested: boolean
 }
 
-export type WhisphryEventPayload =
+export type AuraEventPayload =
   | SessionLifecycleEventPayload
   | TranscriptFinalizedEventPayload
   | ManualRequestEventPayload
   | ScreenshotCapturedEventPayload
 
-export interface EventRecord<TPayload = WhisphryEventPayload> {
+export interface EventRecord<TPayload = AuraEventPayload> {
   id: string
-  type: WhisphryEventType
-  source: WhisphryEventSource
+  type: AuraEventType
+  source: AuraEventSource
   createdAt: number
   sessionId?: string
   sessionFolderName?: string
   payload: TPayload
 }
 
-export type WhisphryArtifactType =
+export type AuraArtifactType =
   | 'screenshot.image'
   | 'generated.image'
   | 'session.record'
@@ -265,7 +265,7 @@ export type WhisphryArtifactType =
 
 export interface ArtifactRecord {
   id: string
-  type: WhisphryArtifactType
+  type: AuraArtifactType
   createdAt: number
   sessionId?: string
   sessionFolderName?: string
@@ -273,30 +273,30 @@ export interface ArtifactRecord {
   relativePath?: string
   mimeType?: string
   sourceEventId?: string
-  sourceEventType?: WhisphryEventType
+  sourceEventType?: AuraEventType
   metadata?: Record<string, string | number | boolean | null>
 }
 
 export interface ArtifactListFilters {
   limit?: number
-  types?: WhisphryArtifactType[]
+  types?: AuraArtifactType[]
   sessionFolderName?: string
   query?: string
 }
 
-export type WhisphryMemoryType =
+export type AuraMemoryType =
   | 'note'
   | 'task'
   | 'summary'
   | 'fact'
   | 'insight'
 
-export type WhisphryMemoryStatus = 'draft' | 'active' | 'resolved' | 'archived'
+export type AuraMemoryStatus = 'draft' | 'active' | 'resolved' | 'archived'
 
 export interface MemoryRecord {
   id: string
-  type: WhisphryMemoryType
-  status: WhisphryMemoryStatus
+  type: AuraMemoryType
+  status: AuraMemoryStatus
   createdAt: number
   updatedAt?: number
   sessionId?: string
@@ -313,20 +313,20 @@ export interface MemoryRecord {
 
 export interface MemoryListFilters {
   limit?: number
-  statuses?: WhisphryMemoryStatus[]
-  types?: WhisphryMemoryType[]
+  statuses?: AuraMemoryStatus[]
+  types?: AuraMemoryType[]
   query?: string
 }
 
 export interface MemoryUpdateInput {
-  type?: WhisphryMemoryType
+  type?: AuraMemoryType
   title?: string
   summary?: string
   content?: string
   tags?: string[]
 }
 
-export type WhisphryEntityType =
+export type AuraEntityType =
   | 'person'
   | 'project'
   | 'company'
@@ -336,7 +336,7 @@ export type WhisphryEntityType =
 
 export interface EntityRecord {
   id: string
-  type: WhisphryEntityType
+  type: AuraEntityType
   name: string
   normalizedName: string
   createdAt: number
@@ -353,13 +353,13 @@ export interface EntityRecord {
 
 export interface EntityListFilters {
   limit?: number
-  types?: WhisphryEntityType[]
+  types?: AuraEntityType[]
   query?: string
 }
 
 // ── Relations ──────────────────────────────────────────
 
-export type WhisphryRelationType =
+export type AuraRelationType =
   | 'mentions'
   | 'derived-from'
   | 'about'
@@ -369,7 +369,7 @@ export type RelationEndpointKind = 'memory' | 'entity' | 'artifact'
 
 export interface RelationRecord {
   id: string
-  type: WhisphryRelationType
+  type: AuraRelationType
   sourceKind: RelationEndpointKind
   sourceId: string
   targetKind: RelationEndpointKind
@@ -381,7 +381,7 @@ export interface RelationRecord {
 
 export interface RelationListFilters {
   limit?: number
-  types?: WhisphryRelationType[]
+  types?: AuraRelationType[]
   sourceKind?: RelationEndpointKind
   sourceId?: string
   targetKind?: RelationEndpointKind

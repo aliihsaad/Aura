@@ -21,7 +21,7 @@ import {
   RelationListFilters,
   RelationRecord,
   RuntimeRecallDebugState,
-  WhisphryMemoryStatus,
+  AuraMemoryStatus,
 } from '@shared/types'
 import type { StudyNotesSnapshot } from '@shared/session-brain-types'
 import type { LocalAiConfig, LocalAiInstallProgress, LocalAiStatus } from '@shared/local-ai-types'
@@ -59,7 +59,7 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke(IPC.GET_RELATIONS_FOR_SOURCE, sourceKind, sourceId),
   getRelationsForTarget: (targetKind: RelationEndpointKind, targetId: string) =>
     ipcRenderer.invoke(IPC.GET_RELATIONS_FOR_TARGET, targetKind, targetId),
-  updateMemoryStatus: (memoryId: string, status: WhisphryMemoryStatus) =>
+  updateMemoryStatus: (memoryId: string, status: AuraMemoryStatus) =>
     ipcRenderer.invoke(IPC.UPDATE_MEMORY_STATUS, memoryId, status),
   updateMemory: (memoryId: string, updates: MemoryUpdateInput) =>
     ipcRenderer.invoke(IPC.UPDATE_MEMORY, memoryId, updates),
@@ -356,7 +356,7 @@ declare global {
       getRecentRelations: (filters?: RelationListFilters) => Promise<RelationRecord[]>
       getRelationsForSource: (sourceKind: RelationEndpointKind, sourceId: string) => Promise<RelationRecord[]>
       getRelationsForTarget: (targetKind: RelationEndpointKind, targetId: string) => Promise<RelationRecord[]>
-      updateMemoryStatus: (memoryId: string, status: WhisphryMemoryStatus) => Promise<MemoryRecord>
+      updateMemoryStatus: (memoryId: string, status: AuraMemoryStatus) => Promise<MemoryRecord>
       updateMemory: (memoryId: string, updates: MemoryUpdateInput) => Promise<MemoryRecord>
       searchRecall: (query: RecallQuery) => Promise<RecallResult[]>
       getRuntimeRecallDebug: () => Promise<RuntimeRecallDebugState>

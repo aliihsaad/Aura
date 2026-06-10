@@ -168,8 +168,8 @@ export class STTService extends EventEmitter {
 // uncaught error from a timer callback (TIMEOUT path), keep the app alive.
 // Better to lose the STT stream than to lose the whole session, the
 // answer window, and any unsaved transcript buffer.
-if (!(process as any).__whisphryStttGuardInstalled) {
-  ;(process as any).__whisphryStttGuardInstalled = true
+if (!(process as any).__auraStttGuardInstalled) {
+  ;(process as any).__auraStttGuardInstalled = true
   process.on('uncaughtException', (err: Error) => {
     const msg = err?.message ?? String(err)
     if (/TIMEOUT/i.test(msg) || /\bsocket\b.*\b(closed|not open)\b/i.test(msg)) {

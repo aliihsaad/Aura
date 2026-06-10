@@ -103,7 +103,7 @@ function createTray(): void {
     { label: 'Quit', click: () => quitApp() },
   ])
 
-  tray.setToolTip('Whisphry')
+  tray.setToolTip('Aura')
   tray.setContextMenu(contextMenu)
 }
 

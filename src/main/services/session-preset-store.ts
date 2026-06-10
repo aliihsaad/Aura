@@ -4,7 +4,7 @@ import type { SessionPreset } from '@shared/types'
 const Store = (ElectronStore as any).default || ElectronStore
 
 const store = new Store({
-  name: 'whisphry-session-presets',
+  name: 'aura-session-presets',
   defaults: {
     presets: [] as SessionPreset[],
   },

@@ -1,20 +1,20 @@
-# Whisphry Packaging & Releases
+# Aura Packaging & Releases
 
 ## Goal
 
-Build installable Whisphry desktop artifacts from versioned Git tags so the app can be tested outside `npm run dev`.
+Build installable Aura desktop artifacts from versioned Git tags so the app can be tested outside `npm run dev`.
 
 ## Current Package Targets
 
-- Windows NSIS installer: `dist/Whisphry-Setup-<version>-x64.exe`
-- Windows portable app: `dist/Whisphry-Portable-<version>.exe`
+- Windows NSIS installer: `dist/Aura-Setup-<version>-x64.exe`
+- Windows portable app: `dist/Aura-Portable-<version>.exe`
 - macOS DMG/ZIP artifacts from the GitHub macOS builder
 
 The installer metadata comes from `package.json`:
 
 - `version`: release version. The first controlled release baseline is `1.0.0`.
-- `build.appId`: `com.whisphry.desktop`
-- `build.productName`: `Whisphry`
+- `build.appId`: `com.aura.desktop`
+- `build.productName`: `Aura`
 
 ## Local Verification
 
@@ -91,13 +91,13 @@ git push origin main --tags
 
 ## Install Test Checklist
 
-- Installer launches and installs Whisphry.
+- Installer launches and installs Aura.
 - Portable EXE launches without install.
 - App starts without `npm run dev`.
 - Closing the settings/dashboard window hides it instead of exiting the app.
 - Tray Quit exits the app cleanly.
 - API keys are entered through the app, not bundled from `.env`.
-- `%APPDATA%/whisphry/` config and session data persist between launches.
+- `%APPDATA%/aura/` config and session data persist between launches.
 
 ## Later
 

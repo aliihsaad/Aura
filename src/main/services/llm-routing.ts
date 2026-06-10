@@ -33,7 +33,7 @@ export function openRouterEndpoint(apiKey: string, model: string): LlmEndpoint {
     tracksModelSelection: true,
     headers: {
       'HTTP-Referer': 'http://localhost',
-      'X-Title': 'Whisphry',
+      'X-Title': 'Aura',
     },
   }
 }

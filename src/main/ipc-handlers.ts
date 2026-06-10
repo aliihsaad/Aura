@@ -17,7 +17,7 @@ import {
   MemoryListFilters,
   MemoryRecord,
   MemoryUpdateInput,
-  WhisphryMemoryStatus,
+  AuraMemoryStatus,
   RecallQuery,
   RuntimeRecallDebugState,
   ToolDefinition,
@@ -145,10 +145,10 @@ import { KernelChannels, ModeChannels } from '@shared/ipc-channels'
 import ElectronStore from 'electron-store'
 const Store = (ElectronStore as any).default || ElectronStore
 
-const configStore = new Store({ name: 'whisphry-config' })
+const configStore = new Store({ name: 'aura-config' })
 const modeConfig = new ModeConfigService(configStore)
 const sessionStore = new Store({
-  name: 'whisphry-session-history',
+  name: 'aura-session-history',
   defaults: {
     sessions: [] as SessionRecord[],
   },
@@ -413,7 +413,7 @@ const heartbeatService: HeartbeatService = new HeartbeatService({
 })
 
 /**
- * Snapshot of Whisphry's currently-active behaviors so the heartbeat
+ * Snapshot of Aura's currently-active behaviors so the heartbeat
  * agent can answer truthfully when asked "do you take screenshots?",
  * "do you record audio?", etc. Reads live config + runtime store so
  * the answers reflect what's actually happening right now, not a
@@ -510,15 +510,15 @@ function buildRealtimeCompanionInstructions(): string {
   }
 
   return [
-    'You are Whisphry in Companion Realtime Beta.',
+    'You are Aura in Companion Realtime Beta.',
     'Keep replies concise, conversational, and useful in the live moment.',
     'Never narrate planning, hidden reasoning, or status analysis.',
     'Do not output markdown headings like "Acknowledge and Inquire"; emit only the final words meant for the user.',
-    'You have the same Whisphry tools as Classic Companion. Use tools instead of pretending when the user asks you to remember, recall, inspect the screen, open artifacts, search, generate, or delegate harder work.',
+    'You have the same Aura tools as Classic Companion. Use tools instead of pretending when the user asks you to remember, recall, inspect the screen, open artifacts, search, generate, or delegate harder work.',
     enabledLiveToolNames.has('solve_with_openrouter')
       ? 'For hard coding, debugging, deep reasoning, web/search-heavy work, or long answers, call solve_with_openrouter and keep your spoken reply short.'
       : '',
-    'Realtime audio is the spoken output. Keep the output transcription clean because Whisphry uses it for the bubble and session record; do not narrate tool internals.',
+    'Realtime audio is the spoken output. Keep the output transcription clean because Aura uses it for the bubble and session record; do not narrate tool internals.',
     'Use the available profile and session context without reciting it.',
     line('User name', profile.name),
     line('Occupation', profile.occupation),
@@ -2067,7 +2067,7 @@ export function setupIpcHandlers(): void {
     return relationStore.listForTarget(targetKind, targetId)
   })
 
-  ipcMain.handle(IPC.UPDATE_MEMORY_STATUS, async (_event, memoryId: string, status: WhisphryMemoryStatus) => {
+  ipcMain.handle(IPC.UPDATE_MEMORY_STATUS, async (_event, memoryId: string, status: AuraMemoryStatus) => {
     const updated = memoryStore.updateStatus(memoryId, status)
     if (!updated) {
       throw new Error('Memory not found')
@@ -2739,7 +2739,7 @@ export function setupIpcHandlers(): void {
     activeAnswerTtsProvider = provider
     explicitAnswerTtsActive = true
     try {
-      await provider.speak('Whisphry local AI voice test.', emitAnswerTtsChunk)
+      await provider.speak('Aura local AI voice test.', emitAnswerTtsChunk)
       if (activeAnswerTtsProvider !== provider) {
         return { success: false, provider: config.ttsProvider, reason: 'TTS request was cancelled' }
       }
@@ -2979,7 +2979,7 @@ export function setupIpcHandlers(): void {
     widgetManager.register({
       type: 'panel',
       props: {
-        title: 'Whisphry',
+        title: 'Aura',
         content: message,
         panelType: 'context',
       },

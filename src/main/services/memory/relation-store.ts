@@ -6,11 +6,11 @@ import {
   RelationEndpointKind,
   RelationListFilters,
   RelationRecord,
-  WhisphryRelationType,
+  AuraRelationType,
 } from '@shared/types'
 
 interface CreateRelationParams {
-  type: WhisphryRelationType
+  type: AuraRelationType
   sourceKind: RelationEndpointKind
   sourceId: string
   targetKind: RelationEndpointKind
@@ -106,7 +106,7 @@ export class RelationStore {
   }
 
   private findExisting(
-    type: WhisphryRelationType,
+    type: AuraRelationType,
     sourceKind: RelationEndpointKind,
     sourceId: string,
     targetKind: RelationEndpointKind,

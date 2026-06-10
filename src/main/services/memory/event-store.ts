@@ -2,11 +2,11 @@ import { app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import { randomUUID } from 'crypto'
-import { EventRecord, WhisphryEventPayload, WhisphryEventSource, WhisphryEventType } from '@shared/types'
+import { EventRecord, AuraEventPayload, AuraEventSource, AuraEventType } from '@shared/types'
 
-interface CreateEventParams<TPayload = WhisphryEventPayload> {
-  type: WhisphryEventType
-  source: WhisphryEventSource
+interface CreateEventParams<TPayload = AuraEventPayload> {
+  type: AuraEventType
+  source: AuraEventSource
   createdAt?: number
   sessionId?: string
   sessionFolderName?: string
@@ -22,7 +22,7 @@ export class EventStore {
     fs.mkdirSync(this.getEventsDir(), { recursive: true })
   }
 
-  createEvent<TPayload = WhisphryEventPayload>(params: CreateEventParams<TPayload>): EventRecord<TPayload> {
+  createEvent<TPayload = AuraEventPayload>(params: CreateEventParams<TPayload>): EventRecord<TPayload> {
     return {
       id: randomUUID(),
       type: params.type,

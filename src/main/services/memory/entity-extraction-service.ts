@@ -1,7 +1,7 @@
 import {
   EntityRecord,
   MemoryRecord,
-  WhisphryEntityType,
+  AuraEntityType,
 } from '@shared/types'
 
 type EntityCandidate = Omit<EntityRecord, 'id'>
@@ -80,7 +80,7 @@ export class EntityExtractionService {
   }
 
   private buildCandidate(
-    type: WhisphryEntityType,
+    type: AuraEntityType,
     name: string,
     memory: MemoryRecord,
     summary: string

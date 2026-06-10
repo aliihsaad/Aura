@@ -392,7 +392,7 @@ export default function ApiConfig() {
           </div>
           <div className="text-[11px] leading-relaxed text-white/30">
             The image tool requests image output through OpenRouter chat completions and stores the
-            returned image as a Whisphry artifact.
+            returned image as a Aura artifact.
           </div>
         </div>
       </div>

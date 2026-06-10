@@ -8,9 +8,9 @@ import type {
   RecallResult,
   RelationRecord,
   RuntimeRecallDebugState,
-  WhisphryEntityType,
-  WhisphryMemoryStatus,
-  WhisphryMemoryType,
+  AuraEntityType,
+  AuraMemoryStatus,
+  AuraMemoryType,
 } from '@shared/types'
 import {
   Archive,
@@ -28,7 +28,7 @@ import {
   Tag,
 } from 'lucide-react'
 
-const STATUS_FILTERS: Array<{ key: 'all' | WhisphryMemoryStatus; label: string }> = [
+const STATUS_FILTERS: Array<{ key: 'all' | AuraMemoryStatus; label: string }> = [
   { key: 'all', label: 'All' },
   { key: 'draft', label: 'Draft' },
   { key: 'active', label: 'Active' },
@@ -36,7 +36,7 @@ const STATUS_FILTERS: Array<{ key: 'all' | WhisphryMemoryStatus; label: string }
   { key: 'archived', label: 'Archived' },
 ]
 
-const TYPE_FILTERS: Array<{ key: 'all' | WhisphryMemoryType; label: string }> = [
+const TYPE_FILTERS: Array<{ key: 'all' | AuraMemoryType; label: string }> = [
   { key: 'all', label: 'All types' },
   { key: 'note', label: 'Notes' },
   { key: 'task', label: 'Tasks' },
@@ -45,7 +45,7 @@ const TYPE_FILTERS: Array<{ key: 'all' | WhisphryMemoryType; label: string }> = 
   { key: 'insight', label: 'Insights' },
 ]
 
-const ENTITY_TYPE_FILTERS: Array<{ key: 'all' | WhisphryEntityType; label: string }> = [
+const ENTITY_TYPE_FILTERS: Array<{ key: 'all' | AuraEntityType; label: string }> = [
   { key: 'all', label: 'All types' },
   { key: 'person', label: 'People' },
   { key: 'project', label: 'Projects' },
@@ -58,7 +58,7 @@ const ENTITY_TYPE_FILTERS: Array<{ key: 'all' | WhisphryEntityType; label: strin
 const MEMORY_LIST_LIMIT = 30
 
 interface MemoryEditDraft {
-  type: WhisphryMemoryType
+  type: AuraMemoryType
   title: string
   summary: string
   content: string
@@ -79,10 +79,10 @@ export default function MemoryViewer() {
   const [recallLoading, setRecallLoading] = useState(false)
   const [runtimeRecallDebug, setRuntimeRecallDebug] = useState<RuntimeRecallDebugState | null>(null)
   const [runtimeRecallLoading, setRuntimeRecallLoading] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<'all' | WhisphryMemoryStatus>('all')
-  const [typeFilter, setTypeFilter] = useState<'all' | WhisphryMemoryType>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | AuraMemoryStatus>('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | AuraMemoryType>('all')
   const [updatingIds, setUpdatingIds] = useState<string[]>([])
-  const [entityTypeFilter, setEntityTypeFilter] = useState<'all' | WhisphryEntityType>('all')
+  const [entityTypeFilter, setEntityTypeFilter] = useState<'all' | AuraEntityType>('all')
   const [entitySearch, setEntitySearch] = useState('')
   const [editingMemoryId, setEditingMemoryId] = useState('')
   const [editDraft, setEditDraft] = useState<MemoryEditDraft | null>(null)
@@ -200,7 +200,7 @@ export default function MemoryViewer() {
     void loadRuntimeRecallDebug()
   }, [])
 
-  const updateStatus = async (memoryId: string, status: WhisphryMemoryStatus) => {
+  const updateStatus = async (memoryId: string, status: AuraMemoryStatus) => {
     setUpdatingIds((current) => [...current, memoryId])
     setError('')
 
@@ -538,7 +538,7 @@ export default function MemoryViewer() {
                   void runRecall()
                 }
               }}
-              placeholder="What should Whisphry remember about this project, person, or task?"
+              placeholder="What should Aura remember about this project, person, or task?"
               className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] py-2.5 pl-9 pr-3 text-[12.5px] text-white/80 placeholder:text-white/20 focus:border-white/[0.12] focus:outline-none"
             />
           </div>
@@ -836,7 +836,7 @@ export default function MemoryViewer() {
                                 onChange={(event) =>
                                   setEditDraft((current) =>
                                     current
-                                      ? { ...current, type: event.target.value as WhisphryMemoryType }
+                                      ? { ...current, type: event.target.value as AuraMemoryType }
                                       : current
                                   )
                                 }

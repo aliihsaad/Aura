@@ -362,7 +362,7 @@ export class LLMService extends EventEmitter {
         Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'http://localhost',
-        'X-Title': 'Whisphry',
+        'X-Title': 'Aura',
       },
       body: JSON.stringify({
         ...args.body,
@@ -683,7 +683,7 @@ export class LLMService extends EventEmitter {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'http://localhost',
-          'X-Title': 'Whisphry',
+          'X-Title': 'Aura',
         },
         body: JSON.stringify({
           model: this.model,
@@ -962,7 +962,7 @@ export class LLMService extends EventEmitter {
         Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'http://localhost',
-        'X-Title': 'Whisphry',
+        'X-Title': 'Aura',
       },
       body: JSON.stringify({
         model: args.model,
@@ -1004,7 +1004,7 @@ export class LLMService extends EventEmitter {
         Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'http://localhost',
-        'X-Title': 'Whisphry',
+        'X-Title': 'Aura',
       },
       body: JSON.stringify({
         model: args.model,
@@ -1050,7 +1050,7 @@ export class LLMService extends EventEmitter {
         {
           role: 'system',
           content:
-            'You are Whisphry vision cortex. Return only JSON with keys: summary, visibleText, uiHints, confidence, shouldEscalate, escalationReason. Keep it compact and factual. Do not invent screen details.',
+            'You are Aura vision cortex. Return only JSON with keys: summary, visibleText, uiHints, confidence, shouldEscalate, escalationReason. Keep it compact and factual. Do not invent screen details.',
         },
         {
           role: 'user',

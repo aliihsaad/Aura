@@ -235,7 +235,7 @@ export default function Controls({
               or TTS is playing. Bars idle into a flat dot when quiet. */}
           <div
             className="flex items-end gap-0.5"
-            title={agentActive ? 'Whisphry is speaking' : 'Whisphry is quiet'}
+            title={agentActive ? 'Aura is speaking' : 'Aura is quiet'}
             style={{ height: 10 }}
           >
             {agentActive ? (

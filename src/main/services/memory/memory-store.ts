@@ -6,16 +6,16 @@ import {
   MemoryListFilters,
   MemoryRecord,
   MemoryUpdateInput,
-  WhisphryMemoryStatus,
-  WhisphryMemoryType,
+  AuraMemoryStatus,
+  AuraMemoryType,
 } from '@shared/types'
 
 interface CreateMemoryParams {
-  type: WhisphryMemoryType
+  type: AuraMemoryType
   title: string
   summary: string
   content?: string
-  status?: WhisphryMemoryStatus
+  status?: AuraMemoryStatus
   createdAt?: number
   sessionId?: string
   sessionFolderName?: string
@@ -62,13 +62,13 @@ export class MemoryStore {
     fs.appendFileSync(this.getPartitionPath(memory.updatedAt ?? memory.createdAt), `${line}\n`, 'utf-8')
   }
 
-  updateStatus(id: string, status: WhisphryMemoryStatus): MemoryRecord | null {
+  updateStatus(id: string, status: AuraMemoryStatus): MemoryRecord | null {
     return this.updateMemory(id, { status })
   }
 
   updateMemory(
     id: string,
-    updates: MemoryUpdateInput & { status?: WhisphryMemoryStatus }
+    updates: MemoryUpdateInput & { status?: AuraMemoryStatus }
   ): MemoryRecord | null {
     this.init()
     const existing = this.getLatestById(id)
@@ -162,8 +162,8 @@ export class MemoryStore {
 
   private matchesFilters(
     memory: MemoryRecord,
-    statuses?: WhisphryMemoryStatus[],
-    types?: WhisphryMemoryType[],
+    statuses?: AuraMemoryStatus[],
+    types?: AuraMemoryType[],
     query?: string
   ): boolean {
     if (statuses && statuses.length > 0 && !statuses.includes(memory.status)) {
