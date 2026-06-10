@@ -1,4 +1,4 @@
-import type { AgentEngine, AnswerSnapshot, CompanionRealtimeStatus, InterviewType, MeetingNote, ModelSelectionInfo, SessionReport, TranscriptEntry } from '@shared/types'
+import type { AgentEngine, AnswerSnapshot, CompanionRealtimeStatus, ModelSelectionInfo, SessionReport, TranscriptEntry } from '@shared/types'
 import { LLMService } from './llm-service'
 import { PreparedSessionStartState, PreparedSessionStopState } from './session-lifecycle-service'
 import { STTService } from './stt-service'
@@ -17,10 +17,8 @@ export class SessionRuntimeStore {
   lastAnswerCompletedAt = 0
   currentSessionStartTime: number | null = null
   currentSessionAnswers: AnswerSnapshot[] = []
-  currentSessionNotes: MeetingNote[] = []
   currentSessionReport: SessionReport | null = null
   lastRequestedQuestion = ''
-  currentSessionInterviewType: InterviewType = 'general'
   currentFileContext = ''
   currentSttKeyterms: string[] = []
   currentSessionRecallContext = ''
@@ -49,10 +47,8 @@ export class SessionRuntimeStore {
     this.lastAnswerCompletedAt = prepared.lastAnswerCompletedAt
     this.currentSessionStartTime = prepared.startedAt
     this.currentSessionAnswers = [...prepared.currentAnswers]
-    this.currentSessionNotes = []
     this.currentSessionReport = null
     this.lastRequestedQuestion = prepared.lastRequestedQuestion
-    this.currentSessionInterviewType = prepared.interviewType
     this.currentFileContext = prepared.fileContext
     this.currentSessionRecallContext = prepared.sessionRecallContext
     this.lastAnswerRecallContext = prepared.lastAnswerRecallContext
@@ -86,7 +82,6 @@ export class SessionRuntimeStore {
   clearPersistedSessionBuffers(): void {
     this.currentSessionStartTime = null
     this.currentSessionAnswers = []
-    this.currentSessionNotes = []
     this.currentSessionReport = null
     this.currentSessionScreenshots = []
     this.latestScreenSummary = ''

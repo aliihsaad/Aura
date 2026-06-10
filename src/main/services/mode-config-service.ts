@@ -49,13 +49,7 @@ export class ModeConfigService {
   constructor(private readonly configStore: ConfigStoreLike) {}
 
   isAgentModeValue(value: unknown): value is AgentMode {
-    switch (value) {
-      case 'interview':
-      case 'companion':
-        return true
-      default:
-        return false
-    }
+    return value === 'companion'
   }
 
   normalizeAgentMode(value: unknown): AgentMode | null {
@@ -63,38 +57,15 @@ export class ModeConfigService {
   }
 
   legacyAgentModeFromFlatConfig(): AgentMode {
-    const stored = this.normalizeAgentMode(this.configStore.get('agentMode'))
-    if (stored) return stored
-    const liveOn = Boolean(this.configStore.get('liveAgentEnabled', false))
-    return liveOn ? 'companion' : 'interview'
+    return 'companion'
   }
 
   readModeScopedConfig(): ModeScopedConfig {
     const raw = this.configStore.get('modes', {}) as unknown
     const modes = isPlainObject(raw) ? raw : {}
-    const interview = isPlainObject(modes.interview) ? modes.interview : {}
     const companion = isPlainObject(modes.companion) ? modes.companion : {}
 
     return {
-      interview: {
-        autoAnswerEnabled: booleanValue(
-          interview.autoAnswerEnabled,
-          Boolean(this.configStore.get('autoAnswerEnabled', true))
-        ),
-        defaultModel: nonEmptyString(
-          interview.defaultModel,
-          String(this.configStore.get('defaultModel', DEFAULT_MODEL))
-        ),
-        codingModel: nonEmptyString(
-          interview.codingModel,
-          String(this.configStore.get('codingModel', ''))
-        ),
-        interviewHeartbeatEnabled: booleanValue(
-          interview.interviewHeartbeatEnabled,
-          Boolean(this.configStore.get('interviewHeartbeatEnabled', AGENT_MODE_DEFAULTS.interviewHeartbeatEnabled))
-        ),
-        lastSession: isPlainObject(interview.lastSession) ? interview.lastSession as SessionContext : null,
-      },
       companion: {
         personality: nonEmptyString(
           companion.personality,
@@ -171,8 +142,12 @@ export class ModeConfigService {
     }
   }
 
-  getInterviewModeConfig(): ModeScopedConfig['interview'] {
-    return this.readModeScopedConfig().interview
+  /** Models used by the OpenRouter answer pipeline (solve_with_openrouter / detail window). */
+  getAnswerModelConfig(): { defaultModel: string; codingModel: string } {
+    return {
+      defaultModel: nonEmptyString(this.configStore.get('defaultModel'), DEFAULT_MODEL),
+      codingModel: nonEmptyString(this.configStore.get('codingModel'), ''),
+    }
   }
 
   getCompanionModeConfig(): ModeScopedConfig['companion'] {
@@ -181,13 +156,6 @@ export class ModeConfigService {
 
   updateModeScopedConfigFromFlatPatch(config: Record<string, any>): void {
     const modes = this.readModeScopedConfig()
-
-    if (config.defaultModel !== undefined) modes.interview.defaultModel = String(config.defaultModel)
-    if (config.codingModel !== undefined) modes.interview.codingModel = String(config.codingModel)
-    if (config.autoAnswerEnabled !== undefined) modes.interview.autoAnswerEnabled = Boolean(config.autoAnswerEnabled)
-    if (config.interviewHeartbeatEnabled !== undefined) {
-      modes.interview.interviewHeartbeatEnabled = Boolean(config.interviewHeartbeatEnabled)
-    }
 
     if (config.personality !== undefined) modes.companion.personality = config.personality as PersonalityPreset
     if (config.interruptionPolicy !== undefined) {
@@ -236,12 +204,12 @@ export class ModeConfigService {
     this.writeModeScopedConfig(modes)
   }
 
-  modeConfigSectionForAgentMode(mode: AgentMode): keyof ModeScopedConfig {
-    return mode === 'companion' ? 'companion' : 'interview'
+  modeConfigSectionForAgentMode(_mode: AgentMode): keyof ModeScopedConfig {
+    return 'companion'
   }
 
-  modeConfigSectionForSession(ctx: SessionContext): keyof ModeScopedConfig {
-    return ctx.sessionIntent === 'quick-help' ? 'companion' : 'interview'
+  modeConfigSectionForSession(_ctx: SessionContext): keyof ModeScopedConfig {
+    return 'companion'
   }
 
   rememberLastSessionForMode(ctx: SessionContext, mode: AgentMode): void {
@@ -255,8 +223,6 @@ export class ModeConfigService {
     const legacyLastSession = contextManager.getLastSessionContext()
     const hasLegacySession =
       Boolean(legacyLastSession.companyName || legacyLastSession.roleName || legacyLastSession.subject || legacyLastSession.sessionNotes) ||
-      legacyLastSession.sessionIntent !== 'interview' ||
-      legacyLastSession.interviewType !== 'general' ||
       Boolean(legacyLastSession.contextFolder)
     if (!hasLegacySession) return
 

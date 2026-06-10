@@ -1,4 +1,4 @@
-import { InterviewType, ModelSelectionInfo } from './types'
+import { ModelSelectionInfo } from './types'
 
 const CODING_KEYWORDS = [
   'function', 'array', 'object', 'class', 'loop', 'bug', 'debug',
@@ -57,7 +57,6 @@ const FALLBACK_VISION_MODEL = 'google/gemini-3-flash-preview'
 export interface SelectModelParams {
   autoModelSelection: boolean
   source: AnswerSource
-  interviewType: InterviewType
   question: string
   defaultModel: string
   codingModel: string
@@ -90,7 +89,7 @@ function selectVisionModel(defaultModel: string, codingModel: string): ModelSele
 }
 
 export function selectModel(params: SelectModelParams): ModelSelectionInfo {
-  const { autoModelSelection, source, interviewType, question, defaultModel, codingModel } = params
+  const { autoModelSelection, source, question, defaultModel, codingModel } = params
 
   if (source === 'screen-analysis') {
     return selectVisionModel(defaultModel, codingModel)
@@ -107,20 +106,6 @@ export function selectModel(params: SelectModelParams): ModelSelectionInfo {
     return {
       modelId: defaultModel,
       reason: 'Coding model not configured',
-    }
-  }
-
-  if (interviewType === 'coding') {
-    return {
-      modelId: codingModel,
-      reason: 'Coding interview',
-    }
-  }
-
-  if (interviewType === 'system-design') {
-    return {
-      modelId: codingModel,
-      reason: 'System design interview',
     }
   }
 

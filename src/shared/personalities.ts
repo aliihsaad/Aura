@@ -57,12 +57,6 @@ export function resolvePersonality(
   }
 
   // Auto selection based on runtime signals
-  const interviewType = sessionContext?.interviewType
-
-  // Coding/technical -> Focused
-  if (interviewType === 'coding' || interviewType === 'technical') {
-    return FOCUSED
-  }
 
   // High activity -> Focused (user is in flow)
   if (recentEventCount !== undefined && recentEventCount > 15) {

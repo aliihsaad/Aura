@@ -25,7 +25,7 @@ export { IPC }
 
 // ── Mode channels ───────────────────────────────────────────
 
-export type Mode = 'interview' | 'companion'
+export type Mode = 'companion'
 
 export type ModeChannel<M extends Mode, E extends string> = `mode:${M}:${E}`
 
@@ -34,13 +34,13 @@ export function modeChannel<M extends Mode, E extends string>(mode: M, event: E)
 }
 
 export const ModeChannels = {
-  interview: {
-    question: 'mode:interview:question',
-    answerToken: 'mode:interview:answer:token',
-    answerEnd: 'mode:interview:answer:end',
-    answerError: 'mode:interview:answer:error',
-    modelSelection: 'mode:interview:model-selection',
-    presence: 'mode:interview:presence',
+  answer: {
+    question: 'mode:answer:question',
+    answerToken: 'mode:answer:token',
+    answerEnd: 'mode:answer:end',
+    answerError: 'mode:answer:error',
+    modelSelection: 'mode:answer:model-selection',
+    presence: 'mode:answer:presence',
   },
   companion: {
     bubbleStart: 'mode:companion:bubble:start',
@@ -87,10 +87,10 @@ export const KernelChannels = {
 
 export interface ChannelPayloads {
   'kernel:mode:active': AgentMode
-  'mode:interview:question': string
-  'mode:interview:model-selection': ModelSelectionInfo
-  'mode:interview:answer:token': string
-  'mode:interview:answer:end': string | AnswerDonePayload
+  'mode:answer:question': string
+  'mode:answer:model-selection': ModelSelectionInfo
+  'mode:answer:token': string
+  'mode:answer:end': string | AnswerDonePayload
 }
 
 export type ChannelName = keyof ChannelPayloads

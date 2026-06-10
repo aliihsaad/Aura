@@ -148,27 +148,6 @@ export class ExtractionService {
       ]
     }
 
-    if (artifact.type === 'session.digest') {
-      return [
-        {
-          type: 'summary',
-          status: 'draft',
-          createdAt: artifact.createdAt,
-          sessionId: artifact.sessionId,
-          sessionFolderName: artifact.sessionFolderName,
-          title: 'Class digest saved',
-          summary: artifact.sessionFolderName
-            ? `Saved class digest for ${artifact.sessionFolderName}`
-            : 'Saved class digest',
-          content: artifact.absolutePath,
-          confidence: 0.68,
-          sourceArtifactIds: [artifact.id],
-          sourceEventIds: artifact.sourceEventId ? [artifact.sourceEventId] : undefined,
-          tags: ['artifact', 'session', 'digest', 'class', 'draft-summary'],
-          metadata: artifact.metadata,
-        },
-      ]
-    }
 
     return []
   }
@@ -207,58 +186,28 @@ function truncateSentence(text: string, maxLength: number): string {
 }
 
 function buildSessionMetadata(sessionContext: SessionContext | undefined, entry: TranscriptEntry): Record<string, string | number | boolean | null> {
-  const behavior = getSessionBehavior(sessionContext?.sessionIntent || 'interview')
+  const behavior = getSessionBehavior(sessionContext?.sessionIntent || 'quick-help')
   return {
     speaker: entry.speaker,
     audioSource: entry.audioSource || null,
     sessionIntent: sessionContext?.sessionIntent || null,
     companyName: sessionContext?.companyName || null,
     roleName: sessionContext?.roleName || null,
-    interviewType: sessionContext?.interviewType || null,
     subject: sessionContext?.subject || null,
     brainPolicy: behavior.brainPolicy,
   }
 }
 
-function getTranscriptNoteTags(sessionContext: SessionContext | undefined, selfAuthored: boolean): string[] {
-  const intent = sessionContext?.sessionIntent || 'interview'
+function getTranscriptNoteTags(_sessionContext: SessionContext | undefined, selfAuthored: boolean): string[] {
   if (selfAuthored) return ['transcript', 'user', 'draft-note']
-  switch (intent) {
-    case 'class':
-      return ['transcript', 'class', 'study-note', 'draft-note']
-    case 'meeting':
-      return ['transcript', 'meeting', 'action-context', 'draft-note']
-    case 'presentation':
-      return ['transcript', 'presentation', 'q-and-a', 'draft-note']
-    default:
-      return ['transcript', 'external-audio', 'draft-note']
-  }
+  return ['transcript', 'external-audio', 'draft-note']
 }
 
-function getTranscriptTaskTags(sessionContext: SessionContext | undefined): string[] {
-  const intent = sessionContext?.sessionIntent || 'interview'
-  switch (intent) {
-    case 'class':
-      return ['transcript', 'class', 'study-task', 'draft-task']
-    case 'meeting':
-      return ['transcript', 'meeting', 'action-item', 'draft-task']
-    case 'presentation':
-      return ['transcript', 'presentation', 'follow-up', 'draft-task']
-    default:
-      return ['transcript', 'user', 'draft-task']
-  }
+function getTranscriptTaskTags(_sessionContext: SessionContext | undefined): string[] {
+  return ['transcript', 'user', 'draft-task']
 }
 
-function getTranscriptNoteTitle(sessionContext: SessionContext | undefined, selfAuthored: boolean): string {
+function getTranscriptNoteTitle(_sessionContext: SessionContext | undefined, selfAuthored: boolean): string {
   if (selfAuthored) return 'Potential note captured from user transcript'
-  switch (sessionContext?.sessionIntent) {
-    case 'class':
-      return 'Potential study note captured from class transcript'
-    case 'meeting':
-      return 'Potential meeting context captured from transcript'
-    case 'presentation':
-      return 'Potential presentation Q&A context captured from transcript'
-    default:
-      return 'Potential note captured from transcript'
-  }
+  return 'Potential note captured from transcript'
 }

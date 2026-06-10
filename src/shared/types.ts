@@ -49,13 +49,6 @@ export interface AppConfig {
 }
 
 export interface ModeScopedConfig {
-  interview: {
-    autoAnswerEnabled: boolean
-    defaultModel: string
-    codingModel: string
-    interviewHeartbeatEnabled: boolean
-    lastSession?: SessionContext | null
-  }
   companion: {
     personality: PersonalityPreset
     interruptionPolicy: InterruptionPolicy
@@ -95,8 +88,6 @@ export interface SessionState {
   transcript: TranscriptEntry[]
   currentAnswer: string
   isGenerating: boolean
-  interviewType: InterviewType
-  autoAnswerEnabled?: boolean
   micEnabled?: boolean
   answerWindowVisible?: boolean
   liveAgentMode?: LiveAgentMode
@@ -116,33 +107,17 @@ export interface TranscriptEntry {
   audioSource?: TranscriptAudioSource
 }
 
-export type InterviewType = 'behavioral' | 'technical' | 'coding' | 'system-design' | 'general'
-export type LiveSessionIntent = 'interview' | 'meeting' | 'presentation' | 'class'
-export type SessionIntent = LiveSessionIntent | 'quick-help'
+export type SessionIntent = 'quick-help'
 export type TranscriptAudioSource = 'system' | 'microphone' | 'chat'
-
-export interface ProfileInterviewPrep {
-  resume: string
-  jobDescription: string
-  skillsSummary: string
-  targetCompanies: string
-}
-
-export interface ProfileLearning {
-  school: string
-  course: string
-  goals: string
-}
 
 export interface SessionPreset {
   id: string
   name: string
-  agentMode: 'interview' | 'companion'
+  agentMode: 'companion'
   context: {
     sessionIntent?: SessionIntent
     companyName?: string
     roleName?: string
-    interviewType?: InterviewType
     subject?: string
     sessionNotes?: string
     contextFolder?: string
@@ -159,10 +134,6 @@ export interface ProfileContext {
   currentFocus: string
   commsStyle: string
   extraInstructions: string
-
-  // Use-case blocks — heartbeat loads the one matching session intent
-  interviewPrep: ProfileInterviewPrep
-  learning: ProfileLearning
   relationships: string
 }
 
@@ -173,18 +144,14 @@ export type AgentEngine =
   | 'workspace-speech'
   | 'workspace-executor'
 
-// Product-level mode the user picks in Settings. Maps to lower-level engines
-// via deriveAgentMode/applyAgentMode helpers in ipc-handlers.
+// Product-level mode. Companion is the only mode in Aura.
 // Persisted under config.agentMode.
-export type AgentMode =
-  | 'interview'
-  | 'companion'
+export type AgentMode = 'companion'
 
 export interface SessionContext {
   sessionIntent: SessionIntent
   companyName: string
   roleName: string
-  interviewType: InterviewType
   subject: string
   sessionNotes: string
   agentEngine?: AgentEngine
@@ -193,16 +160,12 @@ export interface SessionContext {
 
 // Merged view for backward compat
 export interface UserContext {
-  resume: string
-  jobDescription: string
   extraInstructions: string
   sessionIntent: SessionIntent
   companyName: string
   roleName: string
   name: string
-  skillsSummary: string
   preferredAnswerStyle: string
-  interviewType: InterviewType
   subject: string
   sessionNotes: string
 }
@@ -212,7 +175,6 @@ export interface LLMRequest {
   conversationHistory: TranscriptEntry[]
   answerHistory?: AnswerSnapshot[]
   userContext: UserContext
-  interviewType: InterviewType
   fileContext?: string
   recallContext?: string
   answerLanguage?: string
@@ -259,7 +221,6 @@ export interface SessionLifecycleEventPayload {
   sessionIntent?: SessionIntent
   companyName?: string
   roleName?: string
-  interviewType?: InterviewType
   subject?: string
 }
 
@@ -301,7 +262,6 @@ export type WhisphryArtifactType =
   | 'session.transcript'
   | 'session.answers'
   | 'session.notes'
-  | 'session.digest'
 
 export interface ArtifactRecord {
   id: string
@@ -522,30 +482,11 @@ export interface AnswerDonePayload {
   attachments?: AnswerAttachment[]
 }
 
-export interface MeetingNote {
-  id: string
-  text: string
-  speaker: string
-  timestamp: number
-  followUp: string
-}
-
 export interface SessionReport {
   title: string
   createdAt: number
   sourceRequest: string
   markdown: string
-}
-
-export interface ClassDigest {
-  generatedAt: number
-  summary: string
-  keyPoints: string[]
-  commandsAndPackages: string[]
-  errorsAndFixes: string[]
-  screenEvidence: string[]
-  actionItems: string[]
-  followUpQuestions: string[]
 }
 
 export interface SessionRecord {
@@ -556,14 +497,11 @@ export interface SessionRecord {
   durationSeconds: number
   transcript: TranscriptEntry[]
   answers: AnswerSnapshot[]
-  meetingNotes?: MeetingNote[]
   sessionReport?: SessionReport
   studyNotes?: StudyNotesSnapshot
-  classDigest?: ClassDigest
   sessionIntent?: SessionIntent
   companyName?: string
   roleName?: string
-  interviewType?: InterviewType
   subject?: string
   sessionNotes?: string
   contextFolder?: string
@@ -571,7 +509,6 @@ export interface SessionRecord {
   screenshots?: string[] // filenames relative to screenshots/
   profileSnapshot?: {
     name: string
-    skillsSummary: string
   }
   folderName?: string // filesystem folder name for this session
 }
@@ -586,7 +523,6 @@ export interface SessionSummary {
   sessionIntent?: SessionIntent
   companyName?: string
   roleName?: string
-  interviewType?: InterviewType
   subject?: string
   contextFolder?: string
   workspacePath?: string
@@ -677,7 +613,6 @@ export const IPC = {
   DELETE_SESSION: 'session:delete',
   EXPORT_SESSION: 'session:export',
   OPEN_SESSION_FOLDER: 'session:open-folder',
-  SET_SESSION_NOTES: 'session:set-notes',
   GET_STUDY_NOTES: 'session:get-study-notes',
   STUDY_NOTES_UPDATE: 'session:study-notes-update',
 

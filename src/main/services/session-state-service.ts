@@ -23,7 +23,6 @@ interface BroadcastSessionStateOptions {
   isActive: boolean
   isPaused: boolean
   startTime: number | null
-  autoAnswerEnabled: boolean
   micEnabled: boolean
   answerWindowVisible: boolean
   liveAgentMode: LiveAgentMode
@@ -35,7 +34,6 @@ interface BroadcastSessionStateOptions {
     isActive: boolean
     isPaused: boolean
     startTime: number | null
-    autoAnswerEnabled: boolean
     micEnabled: boolean
     answerWindowVisible: boolean
     liveAgentMode: LiveAgentMode
@@ -124,7 +122,6 @@ export class SessionStateService {
       isActive: options.isActive,
       isPaused: options.isPaused,
       startTime: options.startTime,
-      autoAnswerEnabled: options.autoAnswerEnabled,
       micEnabled: options.micEnabled,
       answerWindowVisible: options.answerWindowVisible,
       liveAgentMode: options.liveAgentMode,

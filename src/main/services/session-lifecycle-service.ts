@@ -1,4 +1,4 @@
-import { AnswerSnapshot, InterviewType, ModelSelectionInfo, SessionContext } from '@shared/types'
+import { AnswerSnapshot, ModelSelectionInfo, SessionContext } from '@shared/types'
 import { ContextManager } from './context-manager'
 import { buildSessionRecallContext } from './memory/recall-context'
 import { RecallService } from './memory/recall-service'
@@ -10,7 +10,6 @@ interface PrepareSessionStartOptions {
 }
 
 export interface PreparedSessionStartState {
-  interviewType: InterviewType
   fileContext: string
   loadedFiles: string[]
   sessionFolderName: string
@@ -50,7 +49,7 @@ export class SessionLifecycleService {
 
   async prepareSessionStart(options: PrepareSessionStartOptions): Promise<PreparedSessionStartState> {
     const startedAt = Date.now()
-    const interviewType = this.applySessionContext(options.sessionCtx)
+    this.applySessionContext(options.sessionCtx)
     const fileCtx = this.contextManager.loadFileContext(
       options.sessionCtx && Object.prototype.hasOwnProperty.call(options.sessionCtx, 'contextFolder')
         ? options.sessionCtx.contextFolder
@@ -64,7 +63,6 @@ export class SessionLifecycleService {
     })
 
     return {
-      interviewType,
       fileContext: fileCtx.content,
       loadedFiles: fileCtx.files,
       sessionFolderName,
@@ -106,14 +104,13 @@ export class SessionLifecycleService {
     }
   }
 
-  private applySessionContext(sessionCtx?: SessionContext): InterviewType {
+  private applySessionContext(sessionCtx?: SessionContext): void {
     if (sessionCtx) {
       this.contextManager.setSessionContext(sessionCtx)
-      return sessionCtx.interviewType || 'general'
+      return
     }
 
     this.contextManager.clearSessionContext()
-    return 'general'
   }
 
   private buildSessionFolderName(sessionCtx: SessionContext | undefined, startedAt: number): string {

@@ -150,31 +150,16 @@ function formatStructuredProfile(p: ProfileContext): string {
   if (p.extraInstructions) lines.push(`Standing instructions: ${p.extraInstructions}`)
   if (p.relationships) lines.push(`Relationships: ${p.relationships}`)
 
-  const ip = p.interviewPrep
-  if (ip.resume || ip.jobDescription || ip.skillsSummary || ip.targetCompanies) {
-    lines.push('Interview prep:')
-    if (ip.skillsSummary) lines.push(`  Skills: ${truncate(ip.skillsSummary, 600)}`)
-    if (ip.jobDescription) lines.push(`  Target job: ${truncate(ip.jobDescription, 600)}`)
-    if (ip.targetCompanies) lines.push(`  Target companies: ${ip.targetCompanies}`)
-    if (ip.resume) lines.push(`  Resume excerpt: ${truncate(ip.resume, 1500)}`)
-  }
-  if (p.learning.school || p.learning.course || p.learning.goals) {
-    lines.push('Learning:')
-    if (p.learning.school) lines.push(`  School: ${p.learning.school}`)
-    if (p.learning.course) lines.push(`  Course: ${p.learning.course}`)
-    if (p.learning.goals) lines.push(`  Goals: ${truncate(p.learning.goals, 600)}`)
-  }
   return lines.length > 0 ? lines.join('\n') : '(none provided)'
 }
 
 function formatSessionContext(s: SessionContext): string {
   const lines: string[] = []
-  const behavior = getSessionBehavior(s.sessionIntent || 'interview')
+  const behavior = getSessionBehavior(s.sessionIntent || 'quick-help')
   if (s.sessionIntent) lines.push(`Intent: ${s.sessionIntent}`)
   if (s.companyName) lines.push(`Company: ${s.companyName}`)
   if (s.roleName) lines.push(`Role: ${s.roleName}`)
   if (s.subject) lines.push(`Subject: ${s.subject}`)
-  if (s.interviewType) lines.push(`Type: ${s.interviewType}`)
   if (s.sessionNotes) lines.push(`Notes from user: ${s.sessionNotes}`)
   lines.push(`Brain policy: ${behavior.brainPolicy}`)
   return lines.length > 0 ? lines.join('\n') : '(no metadata)'

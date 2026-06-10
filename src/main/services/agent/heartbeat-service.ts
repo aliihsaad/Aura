@@ -739,12 +739,11 @@ export class HeartbeatService {
       s.length > max ? s.slice(0, max).trimEnd() + '…' : s
 
     if (sessionContext) {
-      const behavior = getSessionBehavior(sessionContext.sessionIntent || 'interview')
+      const behavior = getSessionBehavior(sessionContext.sessionIntent || 'quick-help')
       const meta = [
         sessionContext.sessionIntent && `Intent: ${sessionContext.sessionIntent}`,
         sessionContext.companyName && `Company: ${sessionContext.companyName}`,
         sessionContext.roleName && `Role: ${sessionContext.roleName}`,
-        sessionContext.interviewType && `Type: ${sessionContext.interviewType}`,
         sessionContext.subject && `Subject: ${sessionContext.subject}`,
         sessionContext.sessionNotes && `Session notes from user: ${sessionContext.sessionNotes}`,
         `Behavior role: ${behavior.agentRole}`,
@@ -768,23 +767,6 @@ export class HeartbeatService {
       ].filter(Boolean)
       if (universal.length > 0) parts.push('## User Profile\n' + universal.join('\n'))
 
-      // Intent-relevant block — load only the slice that matches the active session.
-      const intent = sessionContext?.sessionIntent
-      const intentBlock: string[] = []
-      if (intent === 'interview') {
-        const ip = profile.interviewPrep
-        if (ip.skillsSummary) intentBlock.push(`Skills: ${trim(ip.skillsSummary, 1500)}`)
-        if (ip.targetCompanies) intentBlock.push(`Target companies: ${trim(ip.targetCompanies, 500)}`)
-        if (ip.jobDescription) intentBlock.push(`Job description: ${trim(ip.jobDescription, 2000)}`)
-        if (ip.resume) intentBlock.push(`Resume: ${trim(ip.resume, 4000)}`)
-        if (intentBlock.length > 0) parts.push('## Interview Prep\n' + intentBlock.join('\n'))
-      } else if (intent === 'meeting' || intent === 'presentation' || intent === 'class' || intent === 'quick-help') {
-        const l = profile.learning
-        if (l.school) intentBlock.push(`School: ${l.school}`)
-        if (l.course) intentBlock.push(`Course: ${l.course}`)
-        if (l.goals) intentBlock.push(`Learning goals: ${trim(l.goals, 1500)}`)
-        if (intentBlock.length > 0) parts.push('## Learning Context\n' + intentBlock.join('\n'))
-      }
     }
 
     const trimmedProfileMd = profileMd.trim()

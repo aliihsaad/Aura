@@ -10,8 +10,6 @@ import {
   SessionRecord,
   AnswerSnapshot,
   SessionContext,
-  InterviewType,
-  MeetingNote,
   SessionReport,
   ModelSelectionInfo,
   AnswerAttachment,
@@ -389,7 +387,7 @@ const heartbeatService: HeartbeatService = new HeartbeatService({
   getSessionFolderName: () => sessionRuntimeStore.currentSessionFolderName || undefined,
   getModel: () =>
     modeConfig.getCompanionModeConfig().model ||
-    modeConfig.getInterviewModeConfig().defaultModel ||
+    modeConfig.getAnswerModelConfig().defaultModel ||
     process.env.DEFAULT_MODEL ||
     DEFAULT_MODEL,
   getToolDefinitions: () => [
@@ -483,7 +481,7 @@ heartbeatService.setInterruptionPolicy(
   modeConfig.getCompanionModeConfig().interruptionPolicy
 )
 heartbeatService.setProactiveEnabled(
-  modeConfig.getInterviewModeConfig().interviewHeartbeatEnabled
+  modeConfig.getCompanionModeConfig().proactiveNudges
 )
 
 // Shared OpenRouter API key helper.
@@ -672,7 +670,7 @@ function isWorkspaceRuntimeMode(): boolean {
 }
 
 function shouldAutoAnswerFromMic(): boolean {
-  const sessionIntent = contextManager.getSessionContext().sessionIntent || 'interview'
+  const sessionIntent = contextManager.getSessionContext().sessionIntent || 'quick-help'
   return sessionIntent === 'quick-help'
 }
 
@@ -697,10 +695,6 @@ function applyAgentMode(mode: AgentMode): void {
   } else {
     broadcastActiveMode(router.getMode())
   }
-}
-
-function isInterviewHeartbeatEnabled(): boolean {
-  return modeConfig.getInterviewModeConfig().interviewHeartbeatEnabled
 }
 
 function isLiveAgentCaptionsEnabled(): boolean {
@@ -1133,10 +1127,6 @@ function buildSessionContextSummary(): string {
     .slice(-3)
     .map((snapshot) => `- Q: ${snapshot.question}\n  A: ${snapshot.answer.slice(0, 220).trim()}`)
 
-  const noteLines = sessionRuntimeStore.currentSessionNotes
-    .slice(-8)
-    .map((note) => `- ${note.text}${note.followUp ? `\n  Follow-up: ${note.followUp}` : ''}`)
-
   const recentMemories = memoryStore
     .listRecent({ limit: 5, statuses: ['active'] })
     .map((memory) => `- [${memory.type}] ${memory.title}: ${memory.summary}`)
@@ -1148,7 +1138,6 @@ function buildSessionContextSummary(): string {
       sessionCtx.sessionIntent && `Intent: ${sessionCtx.sessionIntent}`,
       sessionCtx.companyName && `Company: ${sessionCtx.companyName}`,
       sessionCtx.roleName && `Role: ${sessionCtx.roleName}`,
-      sessionCtx.interviewType && `Interview Type: ${sessionCtx.interviewType}`,
       sessionCtx.subject && `Subject: ${sessionCtx.subject}`,
       sessionCtx.sessionNotes && `Session Notes: ${sessionCtx.sessionNotes}`,
       sessionCtx.contextFolder && `Context Folder: ${sessionCtx.contextFolder}`,
@@ -1166,10 +1155,6 @@ function buildSessionContextSummary(): string {
 
   if (answerLines.length > 0) {
     sections.push('## Recent Answers\n' + answerLines.join('\n'))
-  }
-
-  if (noteLines.length > 0) {
-    sections.push('## Collected Notes\n' + noteLines.join('\n'))
   }
 
   if (recentMemories.length > 0) {
@@ -1495,28 +1480,28 @@ function sendInterviewQuestion(question: string): void {
   sendToOverlay(IPC.LLM_QUESTION, question)
   sendToAnswer(IPC.LLM_QUESTION, question)
   sendToCanvas(IPC.LLM_QUESTION, question)
-  sendToAnswer(ModeChannels.interview.question, question)
+  sendToAnswer(ModeChannels.answer.question, question)
 }
 
 function sendInterviewModelSelection(selection: ModelSelectionInfo): void {
   sendToOverlay(IPC.LLM_MODEL_SELECTION, selection)
   sendToAnswer(IPC.LLM_MODEL_SELECTION, selection)
   sendToCanvas(IPC.LLM_MODEL_SELECTION, selection)
-  sendToAnswer(ModeChannels.interview.modelSelection, selection)
+  sendToAnswer(ModeChannels.answer.modelSelection, selection)
 }
 
 function sendInterviewAnswerChunk(value: string): void {
   sendToOverlay(IPC.LLM_RESPONSE_CHUNK, value)
   sendToAnswer(IPC.LLM_RESPONSE_CHUNK, value)
   sendToCanvas(IPC.LLM_RESPONSE_CHUNK, value)
-  sendToAnswer(ModeChannels.interview.answerToken, value)
+  sendToAnswer(ModeChannels.answer.answerToken, value)
 }
 
 function sendInterviewAnswerDone(value: string | AnswerDonePayload): void {
   sendToOverlay(IPC.LLM_RESPONSE_DONE, value)
   sendToAnswer(IPC.LLM_RESPONSE_DONE, value)
   sendToCanvas(IPC.LLM_RESPONSE_DONE, value)
-  sendToAnswer(ModeChannels.interview.answerEnd, value)
+  sendToAnswer(ModeChannels.answer.answerEnd, value)
 }
 
 export function setupIpcHandlers(): void {
@@ -1572,7 +1557,7 @@ export function setupIpcHandlers(): void {
   const readPerSessionInputs = () => ({
     createSttService: createSelectedSttService,
     openrouterApiKey: getOpenRouterApiKey(),
-    defaultModel: modeConfig.getInterviewModeConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL,
+    defaultModel: modeConfig.getAnswerModelConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL,
     sttLanguage: configStore.get('sttLanguage', 'en') as string,
     micEnabled: getMicEnabled(),
     utteranceDebounceMs: UTTERANCE_DEBOUNCE_MS,
@@ -1614,7 +1599,7 @@ export function setupIpcHandlers(): void {
         }
       },
       openrouterApiKey: getOpenRouterApiKey(),
-      defaultModel: modeConfig.getInterviewModeConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL,
+      defaultModel: modeConfig.getAnswerModelConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL,
       audioCapture,
       sessionRuntimeStore,
       onTranscript: handleTranscriptEntry,
@@ -1678,7 +1663,7 @@ export function setupIpcHandlers(): void {
     }
 
     const openrouterKey = (getSecureKey('openrouterApiKey') || process.env.OPENROUTER_API_KEY || '') as string
-    const model = modeConfig.getInterviewModeConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
+    const model = modeConfig.getAnswerModelConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
 
     const providerGate = canStartCurrentSessionWithConfiguredProviders()
     if (!providerGate.ok) throw new Error(providerGate.reason)
@@ -1715,16 +1700,10 @@ export function setupIpcHandlers(): void {
       const profile = contextManager.getProfile()
       sessionRuntimeStore.currentSttKeyterms = extractKeyterms([
         sessionRuntimeStore.currentFileContext,
-        profile.interviewPrep.resume,
-        profile.interviewPrep.jobDescription,
-        profile.interviewPrep.skillsSummary,
         profile.extraInstructions,
         profile.languages,
         profile.occupation,
         profile.currentFocus,
-        profile.learning.school,
-        profile.learning.course,
-        profile.learning.goals,
         profile.relationships,
         sessionCtx?.companyName,
         sessionCtx?.roleName,
@@ -1762,7 +1741,6 @@ export function setupIpcHandlers(): void {
         sessionIntent: sessionCtx?.sessionIntent,
         companyName: sessionCtx?.companyName,
         roleName: sessionCtx?.roleName,
-        interviewType: sessionRuntimeStore.currentSessionInterviewType,
         subject: sessionCtx?.subject,
       },
     })
@@ -1870,7 +1848,6 @@ export function setupIpcHandlers(): void {
       isActive: true,
       isPaused: false,
       startTime: sessionRuntimeStore.currentSessionStartTime,
-      autoAnswerEnabled: getAutoAnswerEnabled(),
       micEnabled: getMicEnabled(),
       sessionIntent: contextManager.getSessionContext().sessionIntent || 'interview',
       liveAgentMode: liveAgentMode(),
@@ -1952,7 +1929,6 @@ export function setupIpcHandlers(): void {
       isActive: false,
       isPaused: false,
       startTime: null,
-      autoAnswerEnabled: getAutoAnswerEnabled(),
       micEnabled: getMicEnabled(),
       sessionIntent: contextManager.getSessionContext().sessionIntent || 'interview',
       liveAgentMode: liveAgentMode(),
@@ -2022,7 +1998,6 @@ export function setupIpcHandlers(): void {
     isActive: sessionRuntimeStore.isSessionActive,
     isPaused: sessionRuntimeStore.isSessionPaused,
     startTime: sessionRuntimeStore.currentSessionStartTime,
-    autoAnswerEnabled: getAutoAnswerEnabled(),
     micEnabled: getMicEnabled(),
     answerWindowVisible: Boolean(getAnswerWindow()?.isVisible()),
     liveAgentMode: liveAgentMode(),
@@ -2051,11 +2026,6 @@ export function setupIpcHandlers(): void {
   ipcMain.handle(IPC.OPEN_SESSION_FOLDER, async (_event, folderName: string) => {
     contextManager.openSessionFolder(folderName)
     return { success: true }
-  })
-
-  ipcMain.handle(IPC.SET_SESSION_NOTES, async (_event, notes: MeetingNote[]) => {
-    sessionRuntimeStore.currentSessionNotes = sanitizeMeetingNotes(notes)
-    return { success: true, count: sessionRuntimeStore.currentSessionNotes.length }
   })
 
   ipcMain.handle(IPC.GET_STUDY_NOTES, async () => {
@@ -2276,7 +2246,7 @@ export function setupIpcHandlers(): void {
     'session-preset:save',
     async (
       _event,
-      input: { id?: string; name: string; agentMode: 'interview' | 'companion'; context: Record<string, unknown> }
+      input: { id?: string; name: string; agentMode: 'companion'; context: Record<string, unknown> }
     ) => {
       try {
         return saveSessionPreset({
@@ -2474,52 +2444,6 @@ export function setupIpcHandlers(): void {
     return await checkForUpdates()
   })
 
-  // Resume file upload — AI-powered analysis
-  ipcMain.handle('context:upload-resume', async () => {
-    const result = await dialog.showOpenDialog({
-      properties: ['openFile'],
-      filters: [
-        { name: 'Documents', extensions: ['pdf', 'txt', 'md'] },
-      ],
-    })
-
-    if (result.canceled || result.filePaths.length === 0) return null
-
-    const filePath = result.filePaths[0]
-    const rawContent = contextManager.readResumeFile(filePath)
-
-    // Check if we have an API key for AI analysis
-    const openrouterKey = (getSecureKey('openrouterApiKey') || process.env.OPENROUTER_API_KEY || '') as string
-    const model = modeConfig.getInterviewModeConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
-
-    if (!openrouterKey) {
-      // No API key — return raw text for TXT/MD, error for PDF
-      if (rawContent.text) {
-        return { text: rawContent.text, filePath }
-      }
-      throw new Error('OpenRouter API key required to analyze PDF resumes')
-    }
-
-    // Use AI to structure the resume
-    const resumeLlm = new LLMService(openrouterKey, model)
-    try {
-      const structured = await resumeLlm.analyzeResume(rawContent)
-
-      // Save structured markdown to profile folder
-      const savedPath = contextManager.saveResumeMd(structured)
-      console.log(`[Resume] AI-structured resume saved to ${savedPath}`)
-
-      return { text: structured, filePath }
-    } catch (error: any) {
-      console.error('[Resume] AI analysis failed:', error.message)
-      // Fallback: return raw text if available
-      if (rawContent.text) {
-        return { text: rawContent.text, filePath }
-      }
-      throw new Error(`Failed to analyze resume: ${error.message}`)
-    }
-  })
-
   // ── Config ───────────────────────────────────────────────────
   ipcMain.handle(IPC.GET_CONFIG, async () => {
     const modes = modeConfig.readModeScopedConfig()
@@ -2531,8 +2455,8 @@ export function setupIpcHandlers(): void {
       freeLlmApiBaseUrl: getFreeLlmApiBaseUrl(),
       activeMode,
       modes,
-      defaultModel: modes.interview.defaultModel,
-      codingModel: modes.interview.codingModel,
+      defaultModel: modeConfig.getAnswerModelConfig().defaultModel,
+      codingModel: modeConfig.getAnswerModelConfig().codingModel,
       imageGenerationModel: configStore.get(
         'imageGenerationModel',
         ImageGenerationService.DEFAULT_MODEL
@@ -2542,7 +2466,6 @@ export function setupIpcHandlers(): void {
       fontSize: configStore.get('fontSize', 14) as number,
       bubbleFontSize: configStore.get('bubbleFontSize', 13) as number,
       bubbleWidth: configStore.get('bubbleWidth', 320) as number,
-      autoAnswerEnabled: modes.interview.autoAnswerEnabled,
       micEnabled: configStore.get('micEnabled', true) as boolean,
       sttLanguage: configStore.get('sttLanguage', 'en') as string,
       contentProtection: configStore.get('contentProtection', true) as boolean,
@@ -2563,7 +2486,6 @@ export function setupIpcHandlers(): void {
       interruptionPolicy: modes.companion.interruptionPolicy,
       heartbeatIntervalMs: modes.companion.heartbeatIntervalMs,
       heartbeatEnabled: modes.companion.heartbeatEnabled,
-      interviewHeartbeatEnabled: modes.interview.interviewHeartbeatEnabled,
       brainEnabled: configStore.get('brainEnabled', DEFAULT_BRAIN_CONFIG.brainEnabled) as boolean,
       brainModel: configStore.get('brainModel', DEFAULT_BRAIN_CONFIG.brainModel) as string,
       brainVisionModel: configStore.get('brainVisionModel', DEFAULT_BRAIN_CONFIG.brainVisionModel) as string,
@@ -2611,11 +2533,9 @@ export function setupIpcHandlers(): void {
     if (config.agentMode !== undefined) {
       const nextMode = modeConfig.normalizeAgentMode(config.agentMode)
       if (nextMode) applyAgentMode(nextMode)
-      if (currentAgentMode() !== 'interview') {
-        heartbeatService.setEnabled(true)
-        configStore.set('heartbeatEnabled', true)
-        modeConfig.updateModeScopedConfigFromFlatPatch({ heartbeatEnabled: true })
-      }
+      heartbeatService.setEnabled(true)
+      configStore.set('heartbeatEnabled', true)
+      modeConfig.updateModeScopedConfigFromFlatPatch({ heartbeatEnabled: true })
     }
 
     // Forward agent behavior changes to heartbeat service
@@ -3035,7 +2955,7 @@ export function setupIpcHandlers(): void {
   // PDF to Markdown conversion
   ipcMain.handle(IPC.CONVERT_PDF_TO_MARKDOWN, async (_event, pdfBase64: string, filename: string) => {
     const key = getSecureKey('openrouterApiKey') || process.env.OPENROUTER_API_KEY || ''
-    const model = modeConfig.getInterviewModeConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
+    const model = modeConfig.getAnswerModelConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
     if (!key) throw new Error('OpenRouter API key required for PDF conversion')
     const llm = new LLMService(key, model)
     return llm.convertPdfToMarkdown(pdfBase64, filename)
@@ -3183,7 +3103,6 @@ async function runManualAnswer(question: string): Promise<boolean> {
     answerHistory: sessionRuntimeStore.currentSessionAnswers,
     userContext: contextManager.getContext(),
     sessionContext: contextManager.getSessionContext(),
-    interviewType: sessionRuntimeStore.currentSessionInterviewType,
     fileContext: sessionRuntimeStore.currentFileContext,
     answerLanguage: getAnswerLanguage(),
     baseRecallContext: sessionRuntimeStore.currentSessionRecallContext,
@@ -3291,11 +3210,6 @@ function isShortAcknowledgement(normalized: string): boolean {
 }
 
 function scheduleHeartbeatTrigger(): void {
-  // Interview mode uses the dedicated answer pipeline (utterance-end → maybeGenerateAnswer).
-  // Firing the heartbeat on every transcript turn produces racing bubbles and stalls the
-  // answer window because the heartbeat marks the agent task busy. Skip it here.
-  if (currentAgentMode() === 'interview') return
-
   // Don't trigger on transcript fragments. Deepgram finalizes mid-sentence
   // chunks ("I'm not", "going pretty smooth", "For your answers") on natural
   // pauses; replying to each one floods the bubble with noise and burns the
@@ -3401,9 +3315,6 @@ function handleTranscriptEntry(
       heartbeatService.notifyActivity()
     }
     const handledReportRequest = entry.speaker === 'user' && maybeHandleSessionReportRequest(entry)
-    if (shouldOpenAnswerQueueForEntry(entry)) {
-      showAnswerWindow()
-    }
     if (shouldNotifyHeartbeat && !handledReportRequest) {
       scheduleHeartbeatTrigger()
     }
@@ -3455,7 +3366,6 @@ function createSessionReportArtifact(sourceRequest: string): SessionReport {
   const sessionContext = contextManager.getSessionContext()
   const transcript = sessionRuntimeStore.sessionTranscript.filter((entry) => entry.isFinal)
   const answers = sessionRuntimeStore.currentSessionAnswers
-  const notes = sessionRuntimeStore.currentSessionNotes
   const studyNotes = sessionRuntimeStore.sessionBrain?.readStudyNotesSnapshot() ?? null
   const durationSeconds = sessionRuntimeStore.currentSessionStartTime
     ? Math.max(1, Math.round((now - sessionRuntimeStore.currentSessionStartTime) / 1000))
@@ -3469,7 +3379,6 @@ function createSessionReportArtifact(sourceRequest: string): SessionReport {
     `- Duration so far: ${formatReportDuration(durationSeconds)}`,
     `- Transcript entries: ${transcript.length}`,
     `- Answers captured: ${answers.length}`,
-    `- Notes captured: ${notes.length}`,
     '',
   ]
 
@@ -3537,14 +3446,6 @@ function formatReportDuration(seconds: number): string {
   return `${minutes}m ${remainder}s`
 }
 
-function shouldOpenAnswerQueueForEntry(entry: TranscriptEntry): boolean {
-  if (currentAgentMode() !== 'interview') return false
-  if (!isExternalAudioEntry(entry)) return false
-  const intent = contextManager.getSessionContext().sessionIntent || 'interview'
-  if (!shouldAutoOpenAnswerWindowForExternalPrompt(intent)) return false
-  return isAnswerCandidateText(entry.text) && shouldTreatExternalTranscriptAsPrompt(intent, entry.text)
-}
-
 function isAnswerCandidateText(text: string): boolean {
   const normalized = text.trim().toLowerCase()
   if (!normalized) return false
@@ -3592,7 +3493,6 @@ function broadcastSessionState(): void {
     isActive: sessionRuntimeStore.isSessionActive,
     isPaused: sessionRuntimeStore.isSessionPaused,
     startTime: sessionRuntimeStore.currentSessionStartTime,
-    autoAnswerEnabled: getAutoAnswerEnabled(),
     micEnabled: getMicEnabled(),
     answerWindowVisible: Boolean(getAnswerWindow()?.isVisible()),
     liveAgentMode: liveAgentMode(),
@@ -3722,23 +3622,18 @@ function deepgramKeyFromConfig(): string {
 }
 
 function resolveModel(source: AnswerSource, question: string): ModelSelectionInfo {
-  const interviewConfig = modeConfig.getInterviewModeConfig()
-  const defaultModel = interviewConfig.defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
-  const codingModel = interviewConfig.codingModel || ''
+  const answerModels = modeConfig.getAnswerModelConfig()
+  const defaultModel = answerModels.defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
+  const codingModel = answerModels.codingModel || ''
   const autoModelSelection = configStore.get('autoModelSelection', false) as boolean
 
   return selectModel({
     autoModelSelection,
     source,
-    interviewType: sessionRuntimeStore.currentSessionInterviewType,
     question,
     defaultModel,
     codingModel,
   })
-}
-
-function getAutoAnswerEnabled(): boolean {
-  return modeConfig.getInterviewModeConfig().autoAnswerEnabled
 }
 
 function getMicEnabled(): boolean {
@@ -4160,7 +4055,6 @@ function saveCurrentSession(studyNotes?: StudyNotesSnapshot | null): void {
   const hasPersistableContent =
     sessionRuntimeStore.sessionTranscript.length > 0 ||
     sessionRuntimeStore.currentSessionAnswers.length > 0 ||
-    sessionRuntimeStore.currentSessionNotes.length > 0 ||
     Boolean(sessionRuntimeStore.currentSessionReport) ||
     sessionRuntimeStore.currentSessionScreenshots.length > 0 ||
     Boolean(sessionRuntimeStore.latestScreenSummary.trim()) ||
@@ -4177,7 +4071,6 @@ function saveCurrentSession(studyNotes?: StudyNotesSnapshot | null): void {
       startedAt: sessionRuntimeStore.currentSessionStartTime,
       transcript: sessionRuntimeStore.sessionTranscript,
       answers: sessionRuntimeStore.currentSessionAnswers,
-      meetingNotes: sessionRuntimeStore.currentSessionNotes,
       sessionReport: sessionRuntimeStore.currentSessionReport,
       screenshots: sessionRuntimeStore.currentSessionScreenshots,
       profile: contextManager.getProfile(),
@@ -4267,17 +4160,3 @@ async function runProfileUpdate(args: {
   await Promise.all([profilePromise, voicePromise])
 }
 
-function sanitizeMeetingNotes(notes: MeetingNote[]): MeetingNote[] {
-  if (!Array.isArray(notes)) return []
-
-  return notes
-    .slice(0, 100)
-    .map((note, index) => ({
-      id: String(note?.id || `note:${index}`),
-      text: String(note?.text || '').replace(/\s+/g, ' ').trim(),
-      speaker: String(note?.speaker || 'speaker').slice(0, 40),
-      timestamp: Number.isFinite(Number(note?.timestamp)) ? Number(note.timestamp) : Date.now(),
-      followUp: String(note?.followUp || '').replace(/\s+/g, ' ').trim(),
-    }))
-    .filter((note) => note.text.length > 0)
-}

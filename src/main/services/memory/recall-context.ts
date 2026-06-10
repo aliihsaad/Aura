@@ -78,8 +78,7 @@ function buildSessionRecallQuery(
       sessionCtx.roleName,
       sessionCtx.subject,
       sessionCtx.sessionNotes,
-      sessionCtx.interviewType,
-      getSessionBehavior(sessionCtx.sessionIntent || 'interview').brainPolicy,
+      getSessionBehavior(sessionCtx.sessionIntent || 'quick-help').brainPolicy,
     ],
     noiseTokens
   )
@@ -87,7 +86,7 @@ function buildSessionRecallQuery(
 
 function formatSessionBehaviorRecallBlock(sessionCtx: SessionContext | undefined): string {
   if (!sessionCtx) return ''
-  const behavior = getSessionBehavior(sessionCtx.sessionIntent || 'interview')
+  const behavior = getSessionBehavior(sessionCtx.sessionIntent || 'quick-help')
   return [
     'Session behavior contract for recall:',
     `Behavior role: ${behavior.agentRole}`,

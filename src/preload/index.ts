@@ -11,7 +11,6 @@ import {
   EntityRecord,
   IPC,
   MemoryListFilters,
-  MeetingNote,
   MemoryUpdateInput,
   ModelSelectionInfo,
   MemoryRecord,
@@ -50,7 +49,6 @@ contextBridge.exposeInMainWorld('api', {
   deleteSession: (folderName: string) => ipcRenderer.invoke(IPC.DELETE_SESSION, folderName),
   exportSession: (folderName: string, format: 'md' | 'json') => ipcRenderer.invoke(IPC.EXPORT_SESSION, folderName, format),
   openSessionFolder: (folderName: string) => ipcRenderer.invoke(IPC.OPEN_SESSION_FOLDER, folderName),
-  setSessionNotes: (notes: MeetingNote[]) => ipcRenderer.invoke(IPC.SET_SESSION_NOTES, notes),
   getStudyNotes: () => ipcRenderer.invoke(IPC.GET_STUDY_NOTES),
 
   // Memory
@@ -190,28 +188,28 @@ contextBridge.exposeInMainWorld('api', {
 
   onAnswerQuestion: (callback: (question: string) => void) => {
     const handler = (_event: any, question: string) => callback(question)
-    const channel = rendererChannel(IPC.LLM_QUESTION, ModeChannels.interview.question)
+    const channel = rendererChannel(IPC.LLM_QUESTION, ModeChannels.answer.question)
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.removeListener(channel, handler)
   },
 
   onAnswerModelSelection: (callback: (selection: ModelSelectionInfo) => void) => {
     const handler = (_event: any, selection: ModelSelectionInfo) => callback(selection)
-    const channel = rendererChannel(IPC.LLM_MODEL_SELECTION, ModeChannels.interview.modelSelection)
+    const channel = rendererChannel(IPC.LLM_MODEL_SELECTION, ModeChannels.answer.modelSelection)
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.removeListener(channel, handler)
   },
 
   onAnswerChunk: (callback: (answer: string) => void) => {
     const handler = (_event: any, answer: string) => callback(answer)
-    const channel = rendererChannel(IPC.LLM_RESPONSE_CHUNK, ModeChannels.interview.answerToken)
+    const channel = rendererChannel(IPC.LLM_RESPONSE_CHUNK, ModeChannels.answer.answerToken)
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.removeListener(channel, handler)
   },
 
   onAnswerDone: (callback: (answer: string | AnswerDonePayload) => void) => {
     const handler = (_event: any, answer: string | AnswerDonePayload) => callback(answer)
-    const channel = rendererChannel(IPC.LLM_RESPONSE_DONE, ModeChannels.interview.answerEnd)
+    const channel = rendererChannel(IPC.LLM_RESPONSE_DONE, ModeChannels.answer.answerEnd)
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.removeListener(channel, handler)
   },
@@ -353,7 +351,6 @@ declare global {
       deleteSession: (folderName: string) => Promise<boolean>
       exportSession: (folderName: string, format: 'md' | 'json') => Promise<string | null>
       openSessionFolder: (folderName: string) => Promise<any>
-      setSessionNotes: (notes: MeetingNote[]) => Promise<{ success: boolean; count: number }>
       getStudyNotes: () => Promise<StudyNotesSnapshot | null>
       getRecentMemories: (filters?: number | MemoryListFilters) => Promise<MemoryRecord[]>
       getRecentEntities: (filters?: EntityListFilters) => Promise<EntityRecord[]>

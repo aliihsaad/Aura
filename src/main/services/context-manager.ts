@@ -1,6 +1,6 @@
 import ElectronStore from 'electron-store'
 const Store = (ElectronStore as any).default || ElectronStore
-import { ProfileContext, SessionContext, UserContext, SessionRecord, SessionSummary, TranscriptEntry, AnswerSnapshot, MeetingNote, ClassDigest, SessionReport } from '@shared/types'
+import { ProfileContext, SessionContext, UserContext, SessionRecord, SessionSummary, TranscriptEntry, AnswerSnapshot, SessionReport } from '@shared/types'
 import type { BrainSummarySection, StudyNotesSnapshot, SummaryBullet } from '@shared/session-brain-types'
 import { getSessionIntentSpec } from '@shared/session-intent-policy'
 import { app, shell } from 'electron'
@@ -14,17 +14,6 @@ const defaultProfile: ProfileContext = {
   currentFocus: '',
   commsStyle: '',
   extraInstructions: '',
-  interviewPrep: {
-    resume: '',
-    jobDescription: '',
-    skillsSummary: '',
-    targetCompanies: '',
-  },
-  learning: {
-    school: '',
-    course: '',
-    goals: '',
-  },
   relationships: '',
 }
 
@@ -39,10 +28,9 @@ const store = new Store({
 })
 
 const defaultSessionContext: SessionContext = {
-  sessionIntent: 'interview',
+  sessionIntent: 'quick-help',
   companyName: '',
   roleName: '',
-  interviewType: 'general',
   subject: '',
   sessionNotes: '',
 }
@@ -85,21 +73,17 @@ export class ContextManager {
   }
 
   // Flattened legacy view — keeps existing call sites (prompts, llm-service) working.
-  // Universal fields + interviewPrep block fold into the flat UserContext shape.
+  // Universal profile fields fold into the flat UserContext shape.
   getContext(): UserContext {
     const profile = this.getProfile()
     const session = this.getSessionContext()
     return {
-      resume: profile.interviewPrep.resume,
-      jobDescription: profile.interviewPrep.jobDescription,
       extraInstructions: profile.extraInstructions,
       sessionIntent: session.sessionIntent,
       companyName: session.companyName,
       roleName: session.roleName,
       name: profile.name,
-      skillsSummary: profile.interviewPrep.skillsSummary,
       preferredAnswerStyle: profile.commsStyle,
-      interviewType: session.interviewType,
       subject: session.subject,
       sessionNotes: session.sessionNotes,
     }
@@ -108,11 +92,8 @@ export class ContextManager {
   // Legacy setContext for backward compat — folds flat legacy fields back into nested schema.
   setContext(context: Partial<UserContext>): void {
     const profile = this.getProfile()
-    if (context.resume !== undefined) profile.interviewPrep.resume = context.resume
-    if (context.jobDescription !== undefined) profile.interviewPrep.jobDescription = context.jobDescription
     if (context.extraInstructions !== undefined) profile.extraInstructions = context.extraInstructions
     if (context.name !== undefined) profile.name = context.name
-    if (context.skillsSummary !== undefined) profile.interviewPrep.skillsSummary = context.skillsSummary
     if (context.preferredAnswerStyle !== undefined) profile.commsStyle = context.preferredAnswerStyle
     this.setProfile(profile)
   }
@@ -279,13 +260,9 @@ export class ContextManager {
     const answersMd = this.buildAnswersMd(record)
     fs.writeFileSync(path.join(sessionDir, 'answers.md'), answersMd, 'utf-8')
 
-    // Generate notes.md
-    const notesMd = this.buildNotesMd(record.meetingNotes || [], record.studyNotes, record.sessionReport)
+    // Generate notes.md (session report + study notes)
+    const notesMd = this.buildNotesMd(record.studyNotes, record.sessionReport)
     fs.writeFileSync(path.join(sessionDir, 'notes.md'), notesMd, 'utf-8')
-
-    // Generate digest.md
-    const digestMd = this.buildDigestMd(record.classDigest)
-    fs.writeFileSync(path.join(sessionDir, 'digest.md'), digestMd, 'utf-8')
 
     return folderName
   }
@@ -331,13 +308,11 @@ export class ContextManager {
           sessionIntent: data.sessionIntent,
           companyName: data.companyName,
           roleName: data.roleName,
-          interviewType: data.interviewType,
           subject: data.subject,
           contextFolder: data.contextFolder,
           workspacePath: data.workspacePath,
           transcriptCount: data.transcript?.length ?? 0,
           answerCount: data.answers?.length ?? 0,
-          noteCount: data.meetingNotes?.length ?? 0,
           folderName: folder.name,
         })
       } catch (err) {
@@ -442,40 +417,11 @@ export class ContextManager {
       buildSessionSummaryLine(record),
       record.contextFolder ? `**Context Folder:** ${record.contextFolder}` : '',
       record.workspacePath ? `**Workspace:** ${record.workspacePath}` : '',
-      (record.meetingNotes?.length ?? 0) > 0 ? `**Notes:** ${record.meetingNotes?.length ?? 0}` : '',
-      record.classDigest ? '**Digest:** generated' : '',
       `**Date:** ${dateStr} ${startTime} – ${endTime} (${durationMin} min)`,
       '',
       '---',
       '',
     ]
-
-    if ((record.meetingNotes || []).length > 0) {
-      lines.push('## Collected Notes')
-      lines.push('')
-      for (const note of record.meetingNotes || []) {
-        lines.push(`- ${note.text}`)
-        if (note.followUp) {
-          lines.push(`  - Follow-up: ${note.followUp}`)
-        }
-      }
-      lines.push('')
-      lines.push('---')
-      lines.push('')
-    }
-
-    if (record.classDigest) {
-      lines.push('## Class Digest')
-      lines.push('')
-      lines.push(record.classDigest.summary)
-      lines.push('')
-      for (const point of record.classDigest.keyPoints.slice(0, 8)) {
-        lines.push(`- ${point}`)
-      }
-      lines.push('')
-      lines.push('---')
-      lines.push('')
-    }
 
     for (const entry of record.transcript) {
       const time = new Date(entry.timestamp).toLocaleTimeString('en-US', {
@@ -493,27 +439,7 @@ export class ContextManager {
     return lines.join('\n')
   }
 
-  private buildDigestMd(digest?: ClassDigest): string {
-    const lines: string[] = ['# Class Digest', '']
-
-    if (!digest) {
-      lines.push('No digest generated.')
-      lines.push('')
-      return lines.join('\n')
-    }
-
-    lines.push(digest.summary)
-    lines.push('')
-    appendDigestSection(lines, 'Key Points', digest.keyPoints)
-    appendDigestSection(lines, 'Commands And Packages', digest.commandsAndPackages)
-    appendDigestSection(lines, 'Errors And Fixes', digest.errorsAndFixes)
-    appendDigestSection(lines, 'Screen Evidence', digest.screenEvidence)
-    appendDigestSection(lines, 'Action Items', digest.actionItems)
-    appendDigestSection(lines, 'Follow-up Questions', digest.followUpQuestions)
-    return lines.join('\n')
-  }
-
-  private buildNotesMd(notes: MeetingNote[], studyNotes?: StudyNotesSnapshot, sessionReport?: SessionReport): string {
+  private buildNotesMd(studyNotes?: StudyNotesSnapshot, sessionReport?: SessionReport): string {
     const lines: string[] = ['# Session Notes', '']
     let wroteContent = false
 
@@ -544,33 +470,11 @@ export class ContextManager {
       lines.push('')
     }
 
-    if (notes.length === 0 && !wroteContent) {
+    if (!wroteContent) {
       lines.push('No notes captured.')
       lines.push('')
       return lines.join('\n')
     }
-
-    notes.forEach((note, i) => {
-      wroteContent = true
-      const time = new Date(note.timestamp).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      })
-      lines.push(`## Note ${i + 1}`)
-      lines.push(`**Time:** ${time}`)
-      lines.push(`**Speaker:** ${note.speaker}`)
-      lines.push('')
-      lines.push(note.text)
-      if (note.followUp) {
-        lines.push('')
-        lines.push(`**Follow-up:** ${note.followUp}`)
-      }
-      lines.push('')
-      lines.push('---')
-      lines.push('')
-    })
 
     return lines.join('\n')
   }
@@ -684,7 +588,7 @@ function getPersistedTranscriptSpeakerLabel(
   }
 
   if (entry.speaker === 'unknown') {
-    if (entry.source === 'chat' || entry.audioSource === 'chat') return 'Whisphry'
+    if (entry.source === 'chat' || entry.audioSource === 'chat') return 'Aura'
     return 'Unknown'
   }
 
@@ -718,19 +622,6 @@ function mergeProfileWithDefaults(stored: Partial<ProfileContext> | undefined): 
     currentFocus: s.currentFocus ?? defaultProfile.currentFocus,
     commsStyle: s.commsStyle ?? s.preferredAnswerStyle ?? defaultProfile.commsStyle,
     extraInstructions: s.extraInstructions ?? defaultProfile.extraInstructions,
-    interviewPrep: {
-      resume: s.interviewPrep?.resume ?? s.resume ?? defaultProfile.interviewPrep.resume,
-      jobDescription:
-        s.interviewPrep?.jobDescription ?? s.jobDescription ?? defaultProfile.interviewPrep.jobDescription,
-      skillsSummary:
-        s.interviewPrep?.skillsSummary ?? s.skillsSummary ?? defaultProfile.interviewPrep.skillsSummary,
-      targetCompanies: s.interviewPrep?.targetCompanies ?? defaultProfile.interviewPrep.targetCompanies,
-    },
-    learning: {
-      school: s.learning?.school ?? defaultProfile.learning.school,
-      course: s.learning?.course ?? defaultProfile.learning.course,
-      goals: s.learning?.goals ?? defaultProfile.learning.goals,
-    },
     relationships: s.relationships ?? defaultProfile.relationships,
   }
 }
@@ -740,9 +631,6 @@ function buildSessionSummaryLine(record: SessionRecord): string {
     `**Intent:** ${formatSessionIntent(record.sessionIntent)}`,
     record.companyName ? `**Company:** ${record.companyName}` : '',
     record.roleName ? `**Role:** ${record.roleName}` : '',
-    record.sessionIntent === 'interview'
-      ? `**Type:** ${record.interviewType || 'general'}`
-      : '',
     record.subject ? `**Subject:** ${record.subject}` : '',
   ].filter(Boolean)
 
@@ -770,17 +658,6 @@ function formatSessionFolderTimestamp(timestamp: number): string {
   return `${year}-${month}-${day}_${hour}${minute}${second}`
 }
 
-function formatSessionIntent(intent?: SessionRecord['sessionIntent']): string {
-  switch (intent) {
-    case 'meeting':
-      return 'Meeting'
-    case 'presentation':
-      return 'Presentation'
-    case 'class':
-      return 'Class'
-    case 'quick-help':
-      return 'Quick Help'
-    default:
-      return 'Interview'
-  }
+function formatSessionIntent(_intent?: SessionRecord['sessionIntent']): string {
+  return 'Quick Help'
 }

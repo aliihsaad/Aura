@@ -14,7 +14,7 @@ export function getLatestQuestionCandidate(
   sessionTranscript: TranscriptEntry[],
   lastGeneratedPromptTranscriptCount: number,
   forceRecentFallback: boolean,
-  sessionIntent: SessionIntent = 'interview'
+  sessionIntent: SessionIntent = 'quick-help'
 ): string {
   const finalEntries = getRelevantPromptEntries(sessionTranscript, sessionIntent)
   if (finalEntries.length === 0) return ''
@@ -93,7 +93,7 @@ export function shouldGenerateForQuestion(question: string): boolean {
 
 export function shouldGenerateForAutoPrompt(
   question: string,
-  sessionIntent: SessionIntent = 'interview'
+  sessionIntent: SessionIntent = 'quick-help'
 ): boolean {
   if (!shouldTreatExternalTranscriptAsPrompt(sessionIntent, question)) {
     return false
@@ -113,7 +113,7 @@ export async function prepareQuestionForAnswer(
   question: string,
   llmService: LLMService | null,
   sessionTranscript: TranscriptEntry[],
-  sessionIntent: SessionIntent = 'interview'
+  sessionIntent: SessionIntent = 'quick-help'
 ): Promise<string> {
   const cleanedQuestion = cleanTranscriptQuestion(question)
   if (!cleanedQuestion) return ''
@@ -133,14 +133,14 @@ export async function prepareQuestionForAnswer(
 
 export function countFinalPromptEntries(
   sessionTranscript: TranscriptEntry[],
-  sessionIntent: SessionIntent = 'interview'
+  sessionIntent: SessionIntent = 'quick-help'
 ): number {
   return getRelevantPromptEntries(sessionTranscript, sessionIntent).length
 }
 
 export function getRecentNormalizationContext(
   sessionTranscript: TranscriptEntry[],
-  sessionIntent: SessionIntent = 'interview'
+  sessionIntent: SessionIntent = 'quick-help'
 ): TranscriptEntry[] {
   return getRelevantPromptEntries(sessionTranscript, sessionIntent).slice(-4)
 }

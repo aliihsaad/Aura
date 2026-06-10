@@ -1,6 +1,5 @@
 import {
   AnswerSnapshot,
-  InterviewType,
   LLMRequest,
   SessionContext,
   TranscriptEntry,
@@ -24,7 +23,6 @@ interface SharedAnswerRequestOptions {
   answerHistory: AnswerSnapshot[]
   userContext: UserContext
   sessionContext?: SessionContext
-  interviewType: InterviewType
   fileContext?: string
   answerLanguage?: string
   baseRecallContext?: string
@@ -60,9 +58,9 @@ export class AnswerRequestService {
       options.sessionTranscript,
       options.lastGeneratedPromptTranscriptCount,
       false,
-      options.sessionContext?.sessionIntent || 'interview'
+      options.sessionContext?.sessionIntent || 'quick-help'
     )
-    const sessionIntent = options.sessionContext?.sessionIntent || 'interview'
+    const sessionIntent = options.sessionContext?.sessionIntent || 'quick-help'
     if (!rawQuestion || !shouldGenerateForAutoPrompt(rawQuestion, sessionIntent)) {
       return null
     }
@@ -80,7 +78,7 @@ export class AnswerRequestService {
     const normalizedQuestion = normalizeQuestion(preparedQuestion)
     const promptTranscriptCount = countFinalPromptEntries(
       options.sessionTranscript,
-      options.sessionContext?.sessionIntent || 'interview'
+      options.sessionContext?.sessionIntent || 'quick-help'
     )
 
     return await this.buildPreparedAnswerRequest(
@@ -98,7 +96,7 @@ export class AnswerRequestService {
       options.question,
       options.llmService,
       options.sessionTranscript,
-      options.sessionContext?.sessionIntent || 'interview'
+      options.sessionContext?.sessionIntent || 'quick-help'
     )
     if (!preparedQuestion) {
       return null
@@ -117,7 +115,7 @@ export class AnswerRequestService {
 
     const promptTranscriptCount = countFinalPromptEntries(
       options.sessionTranscript,
-      options.sessionContext?.sessionIntent || 'interview'
+      options.sessionContext?.sessionIntent || 'quick-help'
     )
 
     return await this.buildPreparedAnswerRequest(
@@ -151,7 +149,6 @@ export class AnswerRequestService {
         conversationHistory: options.sessionTranscript,
         answerHistory: options.answerHistory,
         userContext: options.userContext,
-        interviewType: options.interviewType,
         fileContext: options.fileContext,
         recallContext,
         answerLanguage: options.answerLanguage,

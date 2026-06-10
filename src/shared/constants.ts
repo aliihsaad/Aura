@@ -77,11 +77,7 @@ export const HEARTBEAT_COOLDOWNS = {
 }
 
 export const AGENT_MODE_DEFAULTS = {
-  mode: 'interview' as const,
-  // When true, the OpenRouter heartbeat fires proactive bubbles even without
-  // a direct user/interviewer prompt. When false, the heartbeat only runs in
-  // response to finalized transcript events (still surfaces tool-driven answers).
-  interviewHeartbeatEnabled: true,
+  mode: 'companion' as const,
 }
 
 // ── Widgets ──────────────────────────────────────────────

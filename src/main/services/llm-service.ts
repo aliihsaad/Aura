@@ -23,7 +23,6 @@ import {
   buildQuestionPrompt,
   buildScreenCapturePrompt,
   buildQuestionNormalizationPrompt,
-  buildResumeAnalysisPrompt,
 } from '@shared/prompts'
 import { isExternalAudioEntry, isSelfAuthoredEntry } from '@shared/session-intent-policy'
 import type { VisionCortexInput } from './local-ai/providers/vision-provider'
@@ -94,7 +93,7 @@ export class LLMService extends EventEmitter {
 
     const basePrompt = buildSystemPrompt(
       request.userContext,
-      request.interviewType,
+      sessionFromUserContext(request.userContext),
       request.fileContext,
       request.recallContext,
       request.answerLanguage
@@ -108,7 +107,7 @@ export class LLMService extends EventEmitter {
       : basePrompt
     const userPrompt = buildQuestionPrompt(
       request.question,
-      request.userContext.sessionIntent || 'interview'
+      request.userContext.sessionIntent || 'quick-help'
     )
 
     const messages: Array<{ role: string; content: any }> = [
@@ -166,8 +165,8 @@ export class LLMService extends EventEmitter {
 
     const sessionIntent = session?.sessionIntent || readSessionIntentFromContext(context)
     const systemPrompt = session
-      ? buildSystemPrompt(context as ProfileContext, { ...session, interviewType: 'coding' }, undefined, recallContext, answerLanguage)
-      : buildSystemPrompt(context as UserContext, 'coding', undefined, recallContext, answerLanguage)
+      ? buildSystemPrompt(context as ProfileContext, session, undefined, recallContext, answerLanguage)
+      : buildSystemPrompt(context as UserContext, sessionFromUserContext(context as UserContext), undefined, recallContext, answerLanguage)
 
     const messages = [
       {
@@ -212,8 +211,8 @@ export class LLMService extends EventEmitter {
   ): Promise<string> {
     const sessionIntent = session?.sessionIntent || readSessionIntentFromContext(context)
     const systemPrompt = session
-      ? buildSystemPrompt(context as ProfileContext, { ...session, interviewType: 'coding' }, undefined, recallContext, answerLanguage)
-      : buildSystemPrompt(context as UserContext, 'coding', undefined, recallContext, answerLanguage)
+      ? buildSystemPrompt(context as ProfileContext, session, undefined, recallContext, answerLanguage)
+      : buildSystemPrompt(context as UserContext, sessionFromUserContext(context as UserContext), undefined, recallContext, answerLanguage)
 
     const messages = [
       {
@@ -244,7 +243,7 @@ export class LLMService extends EventEmitter {
   ): Promise<string> {
     const recentTranscript = getRecentNormalizationContextEntries(
       conversationHistory,
-      options.sessionIntent || 'interview'
+      options.sessionIntent || 'quick-help'
     )
       .map((entry) => entry.text.trim())
       .join('\n')
@@ -267,32 +266,6 @@ export class LLMService extends EventEmitter {
     return response.trim()
   }
 
-  async analyzeResume(content: { text?: string; pdfBase64?: string }): Promise<string> {
-    const prompt = buildResumeAnalysisPrompt()
-    const userContent: any[] = []
-
-    if (content.pdfBase64) {
-      // Send PDF as document via data URL with application/pdf mime type
-      userContent.push({ type: 'text', text: prompt })
-      userContent.push({
-        type: 'image_url',
-        image_url: { url: `data:application/pdf;base64,${content.pdfBase64}` },
-      })
-    } else if (content.text) {
-      userContent.push({ type: 'text', text: `${prompt}\n\n---\n\nRaw resume text:\n\n${content.text}` })
-    } else {
-      throw new Error('No resume content provided')
-    }
-
-    return this.callOpenRouterOnce(
-      [
-        { role: 'system', content: 'You structure resumes into clean markdown for the Whisphry app.' },
-        { role: 'user', content: userContent },
-      ],
-      0.2,
-      4096
-    )
-  }
 
   private async requestChatCompletion(args: {
     body: Record<string, unknown> | ((endpoint: LlmEndpoint) => Record<string, unknown>)
@@ -1128,9 +1101,19 @@ function filterAvailableTools(
   )
 }
 
+function sessionFromUserContext(ctx: UserContext): SessionContext {
+  return {
+    sessionIntent: ctx.sessionIntent || 'quick-help',
+    companyName: ctx.companyName || '',
+    roleName: ctx.roleName || '',
+    subject: ctx.subject || '',
+    sessionNotes: ctx.sessionNotes || '',
+  }
+}
+
 function readSessionIntentFromContext(context: UserContext | ProfileContext): SessionIntent {
   const value = (context as Partial<UserContext>).sessionIntent
-  return value || 'interview'
+  return value || 'quick-help'
 }
 
 function getRecentNormalizationContextEntries(
