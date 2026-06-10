@@ -1596,6 +1596,9 @@ export function setupIpcHandlers(): void {
           inputAudioTranscription: true,
           outputAudioTranscription: true,
           tools: getRealtimeCompanionToolDefinitions(),
+          // On reconnect after a live WS drop (FreeLLMAPI model rotation),
+          // re-seed the fresh model with the session-brain summary.
+          getReconnectContext: () => sessionRuntimeStore.sessionBrain?.getSummary() ?? '',
         }
       },
       openrouterApiKey: getOpenRouterApiKey(),

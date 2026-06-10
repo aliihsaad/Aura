@@ -325,6 +325,21 @@ export class SessionBrainService {
     return this.buildStudyNotesSnapshot()
   }
 
+  /**
+   * Condensed in-memory session summary for context injection — used by the
+   * realtime pipeline to re-seed a fresh connection after a mid-session
+   * model rotation. Returns '' early in a session (no summary tick yet) so
+   * callers can skip injection.
+   */
+  getSummary(): string {
+    if (!this.deps.config.brainEnabled || !this.subjectState) return ''
+    if (this.summaryTickCount === 0) return ''
+    const md = renderSummaryMarkdown(this.subjectState, this.summaryDoc).trim()
+    if (!md) return ''
+    const lines = md.split('\n')
+    return lines.length > 60 ? lines.slice(-60).join('\n') : md
+  }
+
   private async persistSubject(): Promise<void> {
     if (!this.subjectState) return
     const file = path.join(this.deps.contextManager.brainFolderPath(this.sessionFolderName), 'subject.json')

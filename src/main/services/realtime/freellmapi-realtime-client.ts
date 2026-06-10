@@ -33,6 +33,15 @@ export interface FreeLlmApiRealtimeClientOptions {
   outputAudioTranscription?: boolean
   responseModalities?: string[]
   tools?: ToolDefinition[]
+  /**
+   * Called right before a reconnect after a live socket drop (FreeLLMAPI
+   * rotates models mid-session when a rate limit hits — the replacement
+   * model starts with zero context). The returned condensed session
+   * summary is injected as a system-context prefix into the new
+   * connection's instructions. Return '' to reconnect without injection
+   * (e.g. early in a session when the brain has no summary yet).
+   */
+  getReconnectContext?: () => string
 }
 
 interface RealtimeSessionResponse {
@@ -73,8 +82,13 @@ type JsonRecord = Record<string, unknown>
 
 const SOCKET_CONNECTING = 0
 const SOCKET_OPEN = 1
-const MAX_LIVE_RECONNECT_ATTEMPTS = 3
-const LIVE_RECONNECT_BASE_DELAY_MS = 250
+// Exponential backoff for reconnects after a live drop. Pattern adapted from
+// Mark-XXXIX's screen_processor session loop (2s start, ×1.5, 30s cap), with
+// a quicker first retry since a voice session is latency-sensitive.
+const MAX_LIVE_RECONNECT_ATTEMPTS = 8
+const LIVE_RECONNECT_BASE_DELAY_MS = 1000
+const LIVE_RECONNECT_BACKOFF_FACTOR = 1.5
+const LIVE_RECONNECT_MAX_DELAY_MS = 30_000
 
 export class FreeLlmApiRealtimeClient extends EventEmitter {
   private socket: RealtimeWebSocket | null = null
@@ -85,6 +99,9 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
   private stopRequested = false
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private reconnectAttempts = 0
+  // Session-context snippet injected into the next connection's instructions.
+  // Set when reconnecting after a live drop; cleared once that connection is live.
+  private reconnectContext = ''
 
   constructor(private readonly options: FreeLlmApiRealtimeClientOptions) {
     super()
@@ -203,7 +220,7 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
         input_audio_transcription: Boolean(this.options.inputAudioTranscription),
         output_audio_transcription:
           this.wantsAudioOutput() ? Boolean(this.options.outputAudioTranscription) : undefined,
-        instructions: cleanValue(this.options.instructions) || undefined,
+        instructions: this.effectiveInstructions() || undefined,
         tools: this.options.tools,
       }),
       signal: controller.signal,
@@ -292,6 +309,7 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
             if (!this.isActiveSocket(generation, socket)) return
             live = true
             this.reconnectAttempts = 0
+            this.reconnectContext = ''
             this.setStatus('live')
             if (!connectSettled) {
               connectSettled = true
@@ -344,10 +362,9 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
         voice: wantsAudioOutput ? cleanValue(this.options.voice) || 'alloy' : undefined,
         responseModalities: session.config.responseModalities ?? this.requestedResponseModalities(),
         temperature: session.config.temperature,
-        instructions:
-          cleanValue(session.config.instructions) ||
-          cleanValue(this.options.instructions) ||
-          undefined,
+        instructions: this.withReconnectContext(
+          cleanValue(session.config.instructions) || cleanValue(this.options.instructions)
+        ) || undefined,
         tools: this.options.tools,
         inputAudioTranscription:
           session.config.inputAudioTranscription ?? Boolean(this.options.inputAudioTranscription),
@@ -364,7 +381,7 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
       model: cleanValue(session.model) || cleanValue(this.options.model) || 'auto',
       voice: wantsAudioOutput ? cleanValue(this.options.voice) || 'alloy' : undefined,
       responseModalities,
-      instructions: cleanValue(this.options.instructions) || undefined,
+      instructions: this.effectiveInstructions() || undefined,
       tools: this.options.tools,
       inputAudioTranscription: Boolean(this.options.inputAudioTranscription),
       outputAudioTranscription:
@@ -460,9 +477,12 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
 
     this.reconnectAttempts += 1
     const attempt = this.reconnectAttempts
-    const delayMs = LIVE_RECONNECT_BASE_DELAY_MS * attempt
+    const delayMs = Math.min(
+      LIVE_RECONNECT_BASE_DELAY_MS * Math.pow(LIVE_RECONNECT_BACKOFF_FACTOR, attempt - 1),
+      LIVE_RECONNECT_MAX_DELAY_MS
+    )
     console.warn(
-      `[CompanionRealtime] FreeLLMAPI realtime WebSocket closed; reconnecting (${attempt}/${MAX_LIVE_RECONNECT_ATTEMPTS}): ${error.message}`
+      `[CompanionRealtime] FreeLLMAPI realtime WebSocket closed; reconnecting in ${Math.round(delayMs)}ms (${attempt}/${MAX_LIVE_RECONNECT_ATTEMPTS}): ${error.message}`
     )
     this.setStatus('connecting')
     this.clearReconnectTimer()
@@ -474,6 +494,19 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
 
   private async reconnectAfterLiveClose(): Promise<void> {
     if (this.stopRequested) return
+
+    // A live drop usually means FreeLLMAPI rotated to a fresh model that has
+    // no memory of this session. Capture the session-brain summary so the new
+    // connection's instructions carry the conversation context across.
+    try {
+      this.reconnectContext = cleanValue(this.options.getReconnectContext?.())
+    } catch (error) {
+      console.warn('[CompanionRealtime] reconnect context unavailable:', toError(error).message)
+      this.reconnectContext = ''
+    }
+    if (this.reconnectContext) {
+      console.log('[CompanionRealtime] injecting session-brain summary into reconnect handshake')
+    }
 
     const generation = ++this.connectionGeneration
     const controller = new AbortController()
@@ -488,6 +521,23 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
         this.mintController = null
       }
     }
+  }
+
+  /** Base instructions plus the reconnect context prefix when one is pending. */
+  private effectiveInstructions(): string {
+    return this.withReconnectContext(cleanValue(this.options.instructions))
+  }
+
+  private withReconnectContext(baseInstructions: string): string {
+    if (!this.reconnectContext) return baseInstructions
+    const contextBlock = [
+      '## Restored Session Context',
+      'The previous realtime connection dropped mid-session (likely a model rotation).',
+      'This is a condensed summary of the session so far — continue seamlessly, do not greet the user again or restart the conversation:',
+      '',
+      this.reconnectContext,
+    ].join('\n')
+    return baseInstructions ? `${baseInstructions}\n\n${contextBlock}` : contextBlock
   }
 
   private clearReconnectTimer(): void {
