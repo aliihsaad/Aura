@@ -5,6 +5,7 @@ import ContextUpload from './components/ContextUpload'
 import MemoryViewer from './components/MemoryViewer'
 import SessionControl from './components/SessionControl'
 import pkg from '../../../package.json'
+import auraLogo from '../../assets/aura-logo-transparent.png'
 
 type Tab = 'session' | 'memory' | 'context' | 'config'
 
@@ -52,8 +53,14 @@ export default function App() {
         {/* Logo / Brand */}
         <div className="px-6 pt-9 pb-8">
           <div className="flex items-center gap-3.5">
-            <div className="relative w-11 h-11 rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.5)_0%,transparent_30%),radial-gradient(circle_at_50%_55%,#6ea8ff_0%,#4d7cfe_40%,#8b5cf6_75%,#0b0d1a_100%)] shadow-[0_0_22px_rgba(77,124,254,0.55),0_0_50px_-10px_rgba(139,92,246,0.5)]">
-              <span className="absolute -inset-1.5 rounded-full border border-[rgba(110,168,255,0.2)]" />
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(77,124,254,0.28)_0%,rgba(139,92,246,0.1)_55%,transparent_75%)]" />
+              <img
+                src={auraLogo}
+                alt="Aura"
+                className="relative w-12 h-12 object-contain drop-shadow-[0_0_14px_rgba(77,124,254,0.65)]"
+                draggable={false}
+              />
             </div>
             <div>
               <h1 className="text-[19px] font-extralight tracking-[0.08em] text-white/95 leading-tight">
