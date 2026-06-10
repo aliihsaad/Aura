@@ -183,7 +183,9 @@ export class McpClientManager {
           name: tool.name,
           bridgedName: bridgeToolName(namespace, tool.name),
           description: tool.description ?? tool.name,
-          inputSchema: (tool.inputSchema as Record<string, any>) ?? { type: 'object', properties: {} },
+          inputSchema: sanitizeToolSchema(
+            (tool.inputSchema as Record<string, any>) ?? { type: 'object', properties: {} }
+          ),
         }))
       server.reconnectAttempts = 0
       this.setState(server, 'connected')
@@ -384,6 +386,47 @@ function bridgeToolName(namespace: VaultNamespace, toolName: string): string {
   if (toolName.startsWith(`${namespace}_`)) return toolName
   const stripped = toolName.replace(/^vault_/, '')
   return `${namespace}_${stripped}`
+}
+
+/**
+ * Reduce an MCP JSON Schema to the conservative subset every consumer
+ * accepts. The Gemini Live setup message (realtime engine) rejects
+ * draft-07 keys like $schema / additionalProperties, so keep only the
+ * OpenAPI-style fields; OpenRouter tolerates the same subset.
+ */
+const SCHEMA_KEEP_KEYS = new Set([
+  'type', 'description', 'enum', 'properties', 'required', 'items',
+  'minimum', 'maximum', 'minLength', 'maxLength', 'format', 'default',
+])
+
+function sanitizeToolSchema(schema: Record<string, any>): Record<string, any> {
+  const sanitize = (node: any): any => {
+    if (Array.isArray(node)) return node.map(sanitize)
+    if (!node || typeof node !== 'object') return node
+    const out: Record<string, any> = {}
+    for (const [key, value] of Object.entries(node)) {
+      if (!SCHEMA_KEEP_KEYS.has(key)) continue
+      if (key === 'properties' && value && typeof value === 'object') {
+        const props: Record<string, any> = {}
+        for (const [propName, propSchema] of Object.entries(value as Record<string, any>)) {
+          props[propName] = sanitize(propSchema)
+        }
+        out.properties = props
+      } else if (key === 'items') {
+        out.items = sanitize(value)
+      } else {
+        out[key] = value
+      }
+    }
+    // A property node carrying only composition keys (anyOf/oneOf) loses its
+    // type above — fall back to string so the declaration stays valid.
+    if (!out.type && !out.properties && !out.items && !out.enum) out.type = 'string'
+    return out
+  }
+  const sanitized = sanitize(schema)
+  if (!sanitized.type) sanitized.type = 'object'
+  if (sanitized.type === 'object' && !sanitized.properties) sanitized.properties = {}
+  return sanitized
 }
 
 function renderToolResultText(content: unknown): string {

@@ -75,6 +75,9 @@ interface HeartbeatDeps {
   /** Cross-session memories recalled from Vault at session start. Injected
    * into the system prompt directly after soul.md, before everything else. */
   getVaultRecallContext?: () => string
+  /** Usage guidance for the bridged vault_memory_* and vault_collab_* tools.
+   * Empty when no Vault tools are bridged (servers offline or disabled). */
+  getVaultToolGuidance?: () => string
   getProfile: () => ProfileContext | undefined
   getProfileMd: () => string
   getVoiceMd: () => string
@@ -428,6 +431,7 @@ export class HeartbeatService {
       this.lastLLMCallAt = Date.now()
 
       const vaultRecallContext = this.deps.getVaultRecallContext?.() ?? ''
+      const vaultToolGuidance = this.deps.getVaultToolGuidance?.() ?? ''
 
       const systemPrompt = [
         soulText,
@@ -485,6 +489,7 @@ export class HeartbeatService {
         'If the user explicitly wants the solution applied or ready to paste, use insert_solution_into_editor.',
         'If the screen shows code or a technical error, prefer run_code_analysis_on_screen before commenting on what is visible.',
         '',
+        ...(vaultToolGuidance.trim() ? [vaultToolGuidance.trim(), ''] : []),
         '## Capability Disclosure Rules',
         'If the user asks what tools or capabilities you have, be precise about direct companion tools versus delegated answer-pipeline tools.',
         'Direct companion tools: recall and save memory, get session context, inspect the current screen when explicitly asked, search or preview/open saved artifacts, summarize the current task, copy prepared text/code to clipboard, and delegate hard work to the OpenRouter answer pipeline.',

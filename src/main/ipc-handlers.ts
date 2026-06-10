@@ -435,6 +435,7 @@ const heartbeatService: HeartbeatService = new HeartbeatService({
   widgetManager,
   getSessionContext: () => contextManager.getSessionContext(),
   getVaultRecallContext: () => sessionRuntimeStore.vaultRecallContext,
+  getVaultToolGuidance: () => buildVaultToolGuidance(),
   getProfile: () => contextManager.getProfile(),
   getProfileMd: () => readProfileMdRaw(),
   getVoiceMd: () => readVoiceMdRaw(),
@@ -590,6 +591,7 @@ function buildRealtimeCompanionInstructions(): string {
     line('Company', session.companyName),
     line('Role', session.roleName),
     line('Session notes', session.sessionNotes),
+    buildVaultToolGuidance(),
     sessionRuntimeStore.vaultRecallContext.trim(),
   ].filter(Boolean).join('\n')
 }
@@ -687,7 +689,27 @@ function getRealtimeCompanionToolDefinitions(): ToolDefinition[] {
   return [
     ...TOOL_DEFINITIONS,
     ...getEnabledLiveAgentExtraToolDefinitions(),
+    ...getEnabledVaultToolDefinitions(),
   ].filter((tool) => !REALTIME_COMPANION_BLOCKED_TOOLS.has(tool.function.name))
+}
+
+/** Prompt guidance for the bridged Vault tools — only when actually bridged. */
+function buildVaultToolGuidance(): string {
+  const names = new Set(getEnabledVaultToolDefinitions().map((tool) => tool.function.name))
+  if (names.size === 0) return ''
+  const lines = ['## Vault Tools (cross-session ecosystem)']
+  if ([...names].some((name) => name.startsWith('vault_memory_'))) {
+    lines.push(
+      'vault_memory_* tools talk to The Vault — the user\'s durable cross-session memory shared with their other AI agents.',
+      'Use vault_memory_recall_context or vault_memory_find_memory when the user asks about past sessions, projects, decisions, or anything from "the vault". Use vault_memory_save_memory when they explicitly want something kept long-term (distinct from save_memory, which is Aura-local). vault_memory_get_project_briefing gives a project status overview.'
+    )
+  }
+  if ([...names].some((name) => name.startsWith('vault_collab_'))) {
+    lines.push(
+      'vault_collab_* tools are a read-only window into the user\'s agent coordination layer. Use vault_collab_list_sessions ("which agents are active?"), vault_collab_list_inbox ("any open handoffs?"), and the discussion/event readers when asked. You can only observe — never claim or modify coordination state.'
+    )
+  }
+  return lines.join('\n')
 }
 
 function defaultAgentEngine(): AgentEngine {
