@@ -8,6 +8,7 @@ import {
 import { MemoryPipelineService } from './memory/memory-pipeline-service'
 import { ScreenCaptureService } from './screen-capture'
 import { LLMService } from './llm-service'
+import { buildLlmRouting } from './llm-routing-factory'
 
 interface CaptureAndPersistOptions {
   isSessionActive: boolean
@@ -93,7 +94,13 @@ export class ScreenshotAnalysisService {
   }
 
   async analyzeScreenshot(options: AnalyzeScreenshotOptions): Promise<LLMService> {
-    const llmService = options.llmService ?? new LLMService(options.openrouterKey, options.modelSelection.modelId)
+    const llmService =
+      options.llmService ??
+      new LLMService(
+        options.openrouterKey,
+        options.modelSelection.modelId,
+        buildLlmRouting(options.openrouterKey, options.modelSelection.modelId, { vision: true })
+      )
     llmService.setModel(options.modelSelection.modelId)
 
     // Snapshot the session-runtime listeners so a screenshot analysis cannot

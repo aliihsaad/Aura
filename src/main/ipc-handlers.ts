@@ -81,6 +81,7 @@ import { SessionPersistenceService } from './services/session-persistence-servic
 import { TerminalService } from './services/terminal-service'
 import { WebSearchService } from './services/web-search-service'
 import { WebPageReaderService } from './services/web-page-reader-service'
+import { configureFreeLlmRouting, buildLlmRouting, getRelayModels } from './services/llm-routing-factory'
 import { ImageGenerationService } from './services/image-generation-service'
 import { markdownToPlaintext } from './services/markdown-plaintext'
 import { ModeConfigService } from './services/mode-config-service'
@@ -419,6 +420,14 @@ const widgetManager = new WidgetManager()
 const sessionLifecycleService = new SessionLifecycleService(contextManager, recallService)
 const webSearchService = new WebSearchService()
 const webPageReaderService = new WebPageReaderService()
+
+// LLM-Hub-first routing: reads live config so toggling in Settings takes
+// effect on the next LLMService construction without a restart.
+configureFreeLlmRouting(() => ({
+  baseUrl: getFreeLlmApiBaseUrl(),
+  apiKey: getSecureKey('freeLlmApiKey'),
+  enabled: configStore.get('freeLlmRoutingEnabled', true) as boolean,
+}))
 const conversationLog = new ConversationLogService()
 let localAiManager: LocalAiManager | null = null
 
@@ -1942,7 +1951,7 @@ export function setupIpcHandlers(): void {
       const keyterms = sessionRuntimeStore.currentSttKeyterms ?? []
       sessionRuntimeStore.sttService = createSelectedSttService('system', sttLanguage, keyterms)
       sessionRuntimeStore.micSttService = getMicEnabled() ? createSelectedSttService('user', sttLanguage, keyterms) : null
-      sessionRuntimeStore.llmService = new LLMService(openrouterKey, model)
+      sessionRuntimeStore.llmService = new LLMService(openrouterKey, model, buildLlmRouting(openrouterKey, model))
       sessionRuntimeService.clearPendingGeneration()
 
       sessionRuntimeService.bindSessionRuntime({
@@ -2705,6 +2714,10 @@ export function setupIpcHandlers(): void {
     }
   })
 
+  // Models the LLM-Hub relay can route right now (availability-filtered
+  // server-side). Settings uses this for the relay status panel.
+  ipcMain.handle('llm:relay:models', async () => getRelayModels())
+
   ipcMain.handle('vault:collab:status', async () => auraCollabSession.getStatus())
 
   ipcMain.handle('vault:collab:drain', async () => {
@@ -2792,6 +2805,7 @@ export function setupIpcHandlers(): void {
       vaultCollabEnabled: configStore.get('vaultCollabEnabled', true) as boolean,
       vaultDisabledTools: getVaultDisabledTools(),
       vaultMemoryProject: getVaultMemoryProject(),
+      freeLlmRoutingEnabled: configStore.get('freeLlmRoutingEnabled', true) as boolean,
     }
   })
 
@@ -2816,6 +2830,7 @@ export function setupIpcHandlers(): void {
       'brainEnabled', 'brainModel', 'brainVisionModel', 'brainScreenshotIntervalMs',
       'localAi',
       'vaultMemoryEnabled', 'vaultCollabEnabled', 'vaultDisabledTools', 'vaultMemoryProject',
+      'freeLlmRoutingEnabled',
     ])
     for (const [key, value] of Object.entries(config)) {
       if (!ALLOWED_CONFIG_KEYS.has(key)) continue
@@ -3273,7 +3288,7 @@ export function setupIpcHandlers(): void {
     const key = getSecureKey('openrouterApiKey') || process.env.OPENROUTER_API_KEY || ''
     const model = modeConfig.getAnswerModelConfig().defaultModel || process.env.DEFAULT_MODEL || DEFAULT_MODEL
     if (!key) throw new Error('OpenRouter API key required for PDF conversion')
-    const llm = new LLMService(key, model)
+    const llm = new LLMService(key, model, buildLlmRouting(key, model))
     return llm.convertPdfToMarkdown(pdfBase64, filename)
   })
 
@@ -4014,7 +4029,7 @@ async function captureProactiveScreenSummary(): Promise<void> {
     transcriptEntries: sessionRuntimeStore.sessionTranscript,
   })
   const screenModel = resolveModel('screen-analysis', 'proactive screen tracking')
-  const llm = new LLMService(openrouterKey, screenModel.modelId)
+  const llm = new LLMService(openrouterKey, screenModel.modelId, buildLlmRouting(openrouterKey, screenModel.modelId, { vision: true }))
   const summary = await llm.analyzeScreenshotOnce(
     imageBase64,
     profile,
@@ -4112,7 +4127,7 @@ async function analyzeCurrentScreenOnce(question?: string): Promise<string> {
     transcriptEntries: sessionRuntimeStore.sessionTranscript,
   })
   const screenModel = resolveModel('screen-analysis', question || '')
-  const llm = new LLMService(openrouterKey, screenModel.modelId)
+  const llm = new LLMService(openrouterKey, screenModel.modelId, buildLlmRouting(openrouterKey, screenModel.modelId, { vision: true }))
   const answer = await llm.analyzeScreenshotOnce(
     imageBase64,
     profile,

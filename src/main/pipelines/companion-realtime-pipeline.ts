@@ -15,6 +15,7 @@ import {
   type FreeLlmApiRealtimeClientOptions,
 } from '../services/realtime/freellmapi-realtime-client'
 import { LLMService } from '../services/llm-service'
+import { buildLlmRouting } from '../services/llm-routing-factory'
 import type { SessionRuntimeStore } from '../services/session-runtime-store'
 
 import { sanitizeRealtimeAssistantOutput } from './companion-realtime-output'
@@ -159,7 +160,11 @@ export class CompanionRealtimePipeline extends BasePipeline {
     d.sessionRuntimeStore.llmService?.removeAllListeners()
     d.sessionRuntimeStore.llmService = null
     if (d.openrouterApiKey) {
-      const llmService = new LLMService(d.openrouterApiKey, d.defaultModel)
+      const llmService = new LLMService(
+        d.openrouterApiKey,
+        d.defaultModel,
+        buildLlmRouting(d.openrouterApiKey, d.defaultModel)
+      )
       this.attachLlmListeners(llmService)
       d.sessionRuntimeStore.llmService = llmService
     }

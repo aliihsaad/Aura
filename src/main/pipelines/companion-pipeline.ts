@@ -25,6 +25,7 @@ import type {
 
 import type { AudioCaptureService } from '../audio/capture'
 import { LLMService } from '../services/llm-service'
+import { buildLlmRouting } from '../services/llm-routing-factory'
 import type { SessionRuntimeService } from '../services/session-runtime-service'
 import type { SessionRuntimeStore } from '../services/session-runtime-store'
 import { STTService } from '../services/stt-service'
@@ -84,7 +85,11 @@ export class CompanionPipeline extends BasePipeline {
     store.micSttService = d.micEnabled
       ? d.createSttService('user', d.sttLanguage, d.keyterms)
       : null
-    store.llmService = new LLMService(d.openrouterApiKey, d.defaultModel)
+    store.llmService = new LLMService(
+      d.openrouterApiKey,
+      d.defaultModel,
+      buildLlmRouting(d.openrouterApiKey, d.defaultModel)
+    )
 
     d.sessionRuntimeService.clearPendingGeneration()
 

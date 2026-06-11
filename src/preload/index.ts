@@ -100,6 +100,9 @@ contextBridge.exposeInMainWorld('api', {
   // Learned profile (profile.md / voice.md, rebuilt after each session)
   getLearnedProfile: () => ipcRenderer.invoke('profile:learned'),
 
+  // LLM-Hub relay (free-first routing)
+  getRelayModels: () => ipcRenderer.invoke('llm:relay:models'),
+
   // Vault MCP bridge (Phase 2)
   vaultMemoryRecall: (topic?: string) => ipcRenderer.invoke('vault:memory:recall', topic),
   vaultMemorySave: (payload: { title?: string; subject?: string; summary?: string; content?: string }) =>

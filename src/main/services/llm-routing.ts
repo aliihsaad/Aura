@@ -2,7 +2,7 @@ import {
   OPENROUTER_BASE_URL,
 } from '@shared/constants'
 
-export type LlmEndpointId = 'openrouter'
+export type LlmEndpointId = 'openrouter' | 'freellmapi'
 
 export interface LlmEndpoint {
   id: LlmEndpointId
@@ -35,6 +35,21 @@ export function openRouterEndpoint(apiKey: string, model: string): LlmEndpoint {
       'HTTP-Referer': 'http://localhost',
       'X-Title': 'Aura',
     },
+  }
+}
+
+/** LLM-Hub (FreeLLMAPI successor) — OpenAI-compatible free relay. Placed
+ * before the OpenRouter endpoint so reasoning/vision calls cost nothing
+ * while the relay is healthy; LLMService falls back automatically. */
+export function freeLlmApiEndpoint(baseUrl: string, apiKey: string, model: string): LlmEndpoint {
+  return {
+    id: 'freellmapi',
+    label: 'LLM-Hub',
+    baseUrl: normalizeOpenAiBaseUrl(baseUrl, baseUrl),
+    apiKey,
+    model,
+    tracksModelSelection: true,
+    headers: {},
   }
 }
 
