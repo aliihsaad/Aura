@@ -129,16 +129,19 @@ export default function App() {
       const answer = typeof payload === 'string' ? payload : payload.text
       const attachments = typeof payload === 'string' ? [] : payload.attachments ?? []
       const servedBy = typeof payload === 'string' ? undefined : payload.servedBy
+      // Image-generation answers often arrive with empty text and only an
+      // attachment — those are just as displayable as text.
+      const hasDisplayableAnswer = answer.trim().length > 0 || attachments.length > 0
       setCurrentServedBy(servedBy ?? null)
-      if (answer.trim()) {
+      if (hasDisplayableAnswer) {
         setShowAnswerPane(true)
       }
-      setCurrentAnswer(answer)
+      setCurrentAnswer((prev) => (answer.trim().length > 0 ? answer : prev))
       setCurrentAttachments(attachments)
       setIsAnswering(false)
 
       const question = pendingAnswerQuestionRef.current || latestQuestionRef.current || 'Current Prompt'
-      if (answer.trim()) {
+      if (hasDisplayableAnswer) {
         setAnswerHistory((prev) => {
           const nextEntry = {
             question,
@@ -150,12 +153,19 @@ export default function App() {
             servedBy,
           }
 
+          const lastEntry = prev[prev.length - 1]
+          const sameAttachments =
+            (lastEntry?.attachments?.length ?? 0) === attachments.length &&
+            attachments.every((att, i) =>
+              JSON.stringify(att) === JSON.stringify(lastEntry?.attachments?.[i])
+            )
           const isDuplicate =
             prev.length > 0 &&
-            prev[prev.length - 1].question === nextEntry.question &&
-            prev[prev.length - 1].answer === nextEntry.answer &&
-            prev[prev.length - 1].modelId === nextEntry.modelId &&
-            prev[prev.length - 1].routingReason === nextEntry.routingReason
+            lastEntry.question === nextEntry.question &&
+            lastEntry.answer === nextEntry.answer &&
+            lastEntry.modelId === nextEntry.modelId &&
+            lastEntry.routingReason === nextEntry.routingReason &&
+            sameAttachments
 
           if (isDuplicate) {
             setHistoryIndex(prev.length - 1)
@@ -530,7 +540,13 @@ export default function App() {
   const displayedQuestion = isAnswering
     ? pendingAnswerQuestionRef.current || latestQuestion || selectedHistoryEntry?.question || 'Current Prompt'
     : selectedHistoryEntry?.question || latestQuestion
-  const displayedAnswer = isAnswering ? currentAnswer : selectedHistoryEntry?.answer || currentAnswer
+  // Explicit ternary (not `||`): an image-only history entry has answer ''
+  // and must show just its image, not fall back to stale streamed text.
+  const displayedAnswer = isAnswering
+    ? currentAnswer
+    : selectedHistoryEntry
+      ? selectedHistoryEntry.answer
+      : currentAnswer
   const displayedAttachments = isAnswering
     ? currentAttachments
     : selectedHistoryEntry?.attachments || currentAttachments
