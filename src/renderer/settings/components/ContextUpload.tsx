@@ -96,6 +96,16 @@ export default function ContextUpload() {
   const [contextFiles, setContextFiles] = useState<string[]>([])
   const [contextFolders, setContextFolders] = useState<string[]>([])
   const [contextWarnings, setContextWarnings] = useState<string[]>([])
+  const [learned, setLearned] = useState<{ profileMd: string; voiceMd: string } | null>(null)
+
+  const loadLearned = useCallback(async () => {
+    try {
+      const result = await (window.api as any).getLearnedProfile?.()
+      if (result) setLearned(result)
+    } catch {
+      // older main process without the handler — card simply stays empty
+    }
+  }, [])
 
   // Generic field updater — handles both top-level and nested-block fields.
   const update = <K extends keyof ProfileContext>(key: K, value: ProfileContext[K]): void => {
@@ -133,7 +143,8 @@ export default function ContextUpload() {
   useEffect(() => {
     void loadProfile()
     void loadContextFiles()
-  }, [loadProfile, loadContextFiles])
+    void loadLearned()
+  }, [loadProfile, loadContextFiles, loadLearned])
 
   const handleSave = async (): Promise<void> => {
     await window.api.setProfile(profile)
@@ -150,7 +161,8 @@ export default function ContextUpload() {
       <div>
         <h2 className="text-[30px] font-light text-white/95 tracking-[-0.02em]">Profile</h2>
         <p className="text-[13px] text-white/35 mt-1">
-          Universal facts about you, loaded into every companion session.
+          Who you are and how Aura should talk to you — loaded into every session. Aura also refines
+          its own picture of you automatically after each session.
         </p>
       </div>
 
@@ -233,11 +245,10 @@ export default function ContextUpload() {
         </Field>
       </div>
 
-      {/* Use-case blocks */}
+      {/* Optional extras */}
       <div>
-        <h3 className="text-[11px] font-semibold text-white/35 uppercase tracking-wider mb-3">
-          Use-case blocks
-          <span className="ml-2 text-white/20 normal-case font-normal">— optional</span>
+        <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em] mb-3">
+          Optional
         </h3>
 
         <div className="space-y-3">
@@ -260,6 +271,46 @@ export default function ContextUpload() {
                 className={`${inputClass} resize-y`}
               />
             </Field>
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title="What Aura has learned"
+            description="Aura's own evolving notes about you — rebuilt automatically after each session"
+            icon={<Lightbulb size={16} />}
+          >
+            {learned && (learned.profileMd.trim() || learned.voiceMd.trim()) ? (
+              <div className="space-y-4">
+                {learned.profileMd.trim() && (
+                  <div>
+                    <div className="text-[10.5px] font-semibold text-white/35 uppercase tracking-wider mb-2">
+                      About you
+                    </div>
+                    <pre className="whitespace-pre-wrap rounded-xl bg-black/20 border border-white/[0.05] p-3 text-[11.5px] leading-relaxed text-white/55 font-sans max-h-60 overflow-y-auto">
+                      {learned.profileMd.trim()}
+                    </pre>
+                  </div>
+                )}
+                {learned.voiceMd.trim() && (
+                  <div>
+                    <div className="text-[10.5px] font-semibold text-white/35 uppercase tracking-wider mb-2">
+                      How to talk to you
+                    </div>
+                    <pre className="whitespace-pre-wrap rounded-xl bg-black/20 border border-white/[0.05] p-3 text-[11.5px] leading-relaxed text-white/55 font-sans max-h-60 overflow-y-auto">
+                      {learned.voiceMd.trim()}
+                    </pre>
+                  </div>
+                )}
+                <p className="text-[10.5px] text-white/25">
+                  Read-only — these notes update themselves at the end of every session. Your bubble
+                  feedback (👍 / 👎) feeds directly into them.
+                </p>
+              </div>
+            ) : (
+              <p className="text-[11.5px] text-white/30">
+                Nothing learned yet — finish a session or two and Aura&apos;s own notes about you will
+                appear here.
+              </p>
+            )}
           </CollapsibleCard>
         </div>
       </div>
@@ -289,7 +340,7 @@ export default function ContextUpload() {
           <div className="flex items-center gap-2">
             <Folder size={14} className="text-white/25" />
             <h3 className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">
-              Context Files
+              Knowledge Files
             </h3>
           </div>
           <button
@@ -303,11 +354,12 @@ export default function ContextUpload() {
         </div>
 
         <p className="text-[11.5px] text-white/30 mb-4 leading-relaxed">
-          Drop <code className="text-[10.5px] bg-white/4 rounded px-1.5 py-0.5 text-white/45">.md</code> or{' '}
+          Notes Aura should know by heart. Drop{' '}
+          <code className="text-[10.5px] bg-white/4 rounded px-1.5 py-0.5 text-white/45">.md</code> or{' '}
           <code className="text-[10.5px] bg-white/4 rounded px-1.5 py-0.5 text-white/45">.txt</code> files
-          into the context folder. Files in{' '}
+          into the context folder — anything in{' '}
           <code className="text-[10.5px] bg-white/4 rounded px-1.5 py-0.5 text-white/45">_global/</code>{' '}
-          always load. Company folders load when matched.
+          loads into every session; a project folder loads when you name that project in session setup.
         </p>
 
         {contextFiles.length > 0 && (
@@ -329,7 +381,7 @@ export default function ContextUpload() {
         {contextFolders.length > 0 && (
           <div className="rounded-2xl bg-white/[0.015] border border-white/[0.045] p-4 mb-3">
             <p className="text-[10.5px] font-semibold text-white/35 uppercase tracking-wider mb-3">
-              Company Folders
+              Project Folders
             </p>
             <div className="flex flex-wrap gap-2">
               {contextFolders.map((folder) => (

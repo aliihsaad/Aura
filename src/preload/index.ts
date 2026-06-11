@@ -97,6 +97,9 @@ contextBridge.exposeInMainWorld('api', {
   bubbleFeedback: (input: { bubbleId: string; sentiment: 'up' | 'down'; text: string }) =>
     ipcRenderer.invoke('bubble:feedback', input),
 
+  // Learned profile (profile.md / voice.md, rebuilt after each session)
+  getLearnedProfile: () => ipcRenderer.invoke('profile:learned'),
+
   // Vault MCP bridge (Phase 2)
   vaultMemoryRecall: (topic?: string) => ipcRenderer.invoke('vault:memory:recall', topic),
   vaultMemorySave: (payload: { title?: string; subject?: string; summary?: string; content?: string }) =>

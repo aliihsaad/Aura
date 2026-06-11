@@ -30,8 +30,8 @@ import {
 
 const STATUS_FILTERS: Array<{ key: 'all' | AuraMemoryStatus; label: string }> = [
   { key: 'all', label: 'All' },
-  { key: 'draft', label: 'Draft' },
-  { key: 'active', label: 'Active' },
+  { key: 'active', label: 'Remembered' },
+  { key: 'draft', label: 'Drafts (auto-captured)' },
   { key: 'resolved', label: 'Resolved' },
   { key: 'archived', label: 'Archived' },
 ]
@@ -87,6 +87,7 @@ export default function MemoryViewer() {
   const [editingMemoryId, setEditingMemoryId] = useState('')
   const [editDraft, setEditDraft] = useState<MemoryEditDraft | null>(null)
   const [expandedMemoryIds, setExpandedMemoryIds] = useState<string[]>([])
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const buildFilters = (): MemoryListFilters => ({
     limit: MEMORY_LIST_LIMIT,
@@ -431,8 +432,27 @@ export default function MemoryViewer() {
       <div>
         <h2 className="text-[30px] font-light text-white/95 tracking-[-0.02em]">Memory</h2>
         <p className="mt-1 text-[13px] text-white/35">
-          Review extracted memories, inspect their source files, and archive noise before recall gets more autonomous.
+          Everything Aura remembers about you — browse it, fix it, or archive what you don&apos;t want kept.
         </p>
+      </div>
+
+      {/* How Aura's memory works — plain-language map of the three layers */}
+      <div className="glass-card rounded-2xl p-5 space-y-2.5">
+        <div className="text-[11px] font-medium text-white/40 uppercase tracking-[0.18em]">How Aura remembers</div>
+        <div className="space-y-2 text-[12px] leading-relaxed text-white/45">
+          <p>
+            <span className="text-blue-300/90 font-medium">1 · During a session</span> — the session brain keeps a live
+            summary of what you&apos;re talking about. It resets when the session ends.
+          </p>
+          <p>
+            <span className="text-blue-300/90 font-medium">2 · This page</span> — lasting memories Aura keeps between
+            sessions: things you asked it to remember, plus facts it captured as drafts for your review.
+          </p>
+          <p>
+            <span className="text-violet-300/90 font-medium">3 · The Vault</span> — long-term memory shared with your
+            other AI agents. Managed under <span className="text-white/60">Settings → Memory &amp; Sync</span>.
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
@@ -514,16 +534,30 @@ export default function MemoryViewer() {
         </div>
       )}
 
+      {/* Diagnostics live behind a toggle — recall testing, prompt-injection
+          inspection, and the derived knowledge graph are power-user tools,
+          not the page's job. */}
+      <button
+        onClick={() => setShowAdvanced((v) => !v)}
+        className="flex w-full items-center justify-between rounded-xl border border-white/[0.05] bg-white/[0.015] px-4 py-2.5 text-left transition-colors hover:bg-white/[0.03]"
+      >
+        <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+          Advanced — recall testing &amp; knowledge graph
+        </span>
+        <span className="text-[11px] text-white/25">{showAdvanced ? 'Hide' : 'Show'}</span>
+      </button>
+
+      {showAdvanced && (<>
       <section className="space-y-3">
         <div>
           <div className="flex items-center gap-2">
             <MessageSquareQuote size={14} className="text-white/25" />
             <h3 className="text-[12px] font-semibold uppercase tracking-wider text-white/50">
-              Recall
+              Recall test
             </h3>
           </div>
           <p className="mt-1 text-[12px] text-white/28">
-            Query active memories first, with linked artifacts attached to the strongest matches.
+            Try a query and see exactly which memories Aura would retrieve for it.
           </p>
         </div>
 
@@ -672,7 +706,7 @@ export default function MemoryViewer() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-[11px] uppercase tracking-wider text-white/35">
-            Entities
+            Knowledge graph — people, projects &amp; topics Aura has noticed
           </div>
           <div className="text-[11px] text-white/25">
             {recentEntities.length} visible
@@ -758,6 +792,7 @@ export default function MemoryViewer() {
           )}
         </div>
       </section>
+      </>)}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

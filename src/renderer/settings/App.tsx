@@ -13,8 +13,8 @@ const APP_VERSION = pkg.version
 
 const tabs: { id: Tab; label: string; desc: string; icon: React.ElementType }[] = [
   { id: 'session', label: 'Session', desc: 'Live control & history', icon: Radio },
-  { id: 'memory', label: 'Memory', desc: 'Drafts & signals', icon: Database },
-  { id: 'context', label: 'Profile', desc: 'Your info & context', icon: FileText },
+  { id: 'memory', label: 'Memory', desc: 'What Aura remembers', icon: Database },
+  { id: 'context', label: 'Profile', desc: 'Who you are', icon: FileText },
   { id: 'config', label: 'Settings', desc: 'Keys & preferences', icon: Settings },
 ]
 

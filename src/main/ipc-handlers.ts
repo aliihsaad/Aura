@@ -2596,6 +2596,14 @@ export function setupIpcHandlers(): void {
   })
 
   // ── Config ───────────────────────────────────────────────────
+  // What Aura has learned about the user across sessions — read-only
+  // surface for the Profile page (profile.md / voice.md are rebuilt by
+  // the post-session updaters).
+  ipcMain.handle('profile:learned', async () => ({
+    profileMd: readProfileMdRaw(),
+    voiceMd: readVoiceMdRaw(),
+  }))
+
   // ── Vault MCP bridge (Phase 2) ─────────────────────────────────
   ipcMain.handle('vault:memory:recall', async (_event, topic?: string) => {
     const base = contextManager.getSessionContext()
