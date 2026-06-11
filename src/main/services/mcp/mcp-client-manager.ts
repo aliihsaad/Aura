@@ -62,11 +62,13 @@ const RECONNECT_MAX_ATTEMPTS = 8
 const CONNECT_TIMEOUT_MS = 90_000
 const TOOL_CALL_TIMEOUT_MS = 30_000
 
-// Only a curated subset of server tools is bridged to the agent. The
-// vault-collab safety rules forbid Aura (a companion presence, not a task
-// agent) from claiming/resolving handoffs or mutating coordination state,
-// so its bridge is read-only. Session lifecycle calls (register/heartbeat/
-// receive/disconnect) go through AuraCollabSession, not the agent.
+// Only a curated subset of server tools is bridged to the agent. Reads are
+// open; every coordination WRITE (publish/claim/update/resolve/release/
+// reopen/discussions) requires an explicit per-call user confirmation
+// dialog in ipc-handlers — Aura never mutates the coordination layer on its
+// own judgment. Session lifecycle calls (register/heartbeat/receive/
+// disconnect) go through AuraCollabSession, which also holds the private
+// owner token injected main-side for owner-gated verbs.
 const BRIDGED_TOOL_ALLOWLIST: Record<VaultNamespace, Set<string>> = {
   vault_memory: new Set([
     'vault_recall_context',
@@ -97,6 +99,16 @@ const BRIDGED_TOOL_ALLOWLIST: Record<VaultNamespace, Set<string>> = {
     'vault_collab_list_discussion_threads',
     'vault_collab_get_discussion_thread',
     'vault_collab_list_events',
+    // Write verbs — every one of these is confirmation-gated in ipc-handlers
+    // (native dialog per call); owner credentials are injected main-side.
+    'vault_collab_publish_handoff',
+    'vault_collab_claim_handoff',
+    'vault_collab_update_handoff',
+    'vault_collab_resolve_handoff',
+    'vault_collab_release_handoff',
+    'vault_collab_reopen_handoff',
+    'vault_collab_add_discussion_message',
+    'vault_collab_create_handoff_discussion_thread',
   ]),
 }
 

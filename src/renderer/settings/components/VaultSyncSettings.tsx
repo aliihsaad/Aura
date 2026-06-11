@@ -207,8 +207,8 @@ export default function VaultSyncSettings() {
                 <StatusDot state={collabState} />
               </div>
               <div className="text-[11px] text-white/30 mt-0.5">
-                Registers Aura on the shared coordination layer (presence + attention only — Aura
-                never claims work).
+                Registers Aura on the shared coordination layer. Reading is automatic; any write
+                (publish, claim, resolve…) requires your per-action confirmation.
                 {status?.vaultCollab.sessionUid && (
                   <span className="block font-mono text-white/20 mt-0.5 truncate">
                     {status.vaultCollab.sessionUid}
@@ -227,7 +227,9 @@ export default function VaultSyncSettings() {
             <div className="mt-3 ml-1 border-l border-white/5 pl-4 space-y-2">
               {collabTools.length > 0 && (
                 <div>
-                  <div className="text-[10.5px] text-white/30 uppercase tracking-wider mb-1">Agent tools (read-only)</div>
+                  <div className="text-[10.5px] text-white/30 uppercase tracking-wider mb-1">
+                    Agent tools — writes always ask you first
+                  </div>
                   {collabTools.map(toolRow)}
                 </div>
               )}

@@ -58,6 +58,15 @@ export class AuraCollabSession {
     }
   }
 
+  /** Owner credentials for user-confirmed coordination writes (claim/update/
+   * resolve/release). Main-process only — the token must never reach the
+   * model: callers inject it into the outgoing args AFTER the user confirms,
+   * and it never appears in any tool result. */
+  getOwnerCredentials(): { sessionUid: string; sessionToken: string } | null {
+    if (!this.sessionUid || !this.sessionToken) return null
+    return { sessionUid: this.sessionUid, sessionToken: this.sessionToken }
+  }
+
   /** Register presence + drain attention. Safe to call repeatedly. */
   async start(): Promise<void> {
     if (!this.deps.isEnabled()) return

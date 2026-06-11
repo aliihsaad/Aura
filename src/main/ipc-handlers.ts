@@ -234,6 +234,59 @@ function getEnabledVaultToolDefinitions(): ToolDefinition[] {
   ].filter((def) => !disabled.has(def.function.name))
 }
 
+// Coordination-layer write verbs the agent may request — each one requires
+// the user to click Allow in a native dialog before anything is sent.
+const GATED_COLLAB_WRITE_TOOLS: Record<string, string> = {
+  vault_collab_publish_handoff: 'publish a new handoff to the agent network',
+  vault_collab_claim_handoff: 'claim a handoff',
+  vault_collab_update_handoff: 'update a handoff (status/progress note)',
+  vault_collab_resolve_handoff: 'resolve (close) a handoff',
+  vault_collab_release_handoff: 'release a claimed handoff back to the inbox',
+  vault_collab_reopen_handoff: 'reopen a handoff',
+  vault_collab_add_discussion_message: 'post a message in an agent discussion',
+  vault_collab_create_handoff_discussion_thread: 'open a discussion thread on a handoff',
+}
+
+// Owner-gated verbs: the server requires Aura's private session credentials,
+// injected main-side after confirmation (the model never sees the token).
+const COLLAB_TOOLS_NEEDING_OWNER_CREDS = new Set([
+  'vault_collab_claim_handoff',
+  'vault_collab_update_handoff',
+  'vault_collab_resolve_handoff',
+  'vault_collab_release_handoff',
+  'vault_collab_reopen_handoff',
+])
+
+async function confirmCollabWriteAction(actionLabel: string, args: Record<string, any>): Promise<boolean> {
+  const detailParts = [
+    args.handoffUid ?? args.handoff_uid ? `Handoff: ${args.handoffUid ?? args.handoff_uid}` : null,
+    args.targetProject ?? args.target_project ? `Target project: ${args.targetProject ?? args.target_project}` : null,
+    args.status ? `Status: ${args.status}` : null,
+    args.shortPrompt ?? args.short_prompt
+      ? `Prompt: ${String(args.shortPrompt ?? args.short_prompt).slice(0, 600)}`
+      : null,
+    args.progressNote ?? args.progress_note
+      ? `Note: ${String(args.progressNote ?? args.progress_note).slice(0, 400)}`
+      : null,
+    args.resolutionSummary ?? args.resolution_summary
+      ? `Resolution: ${String(args.resolutionSummary ?? args.resolution_summary).slice(0, 400)}`
+      : null,
+    args.message ? `Message: ${String(args.message).slice(0, 400)}` : null,
+  ].filter(Boolean)
+
+  const result = await dialog.showMessageBox({
+    type: 'warning',
+    title: 'Aura — agent network action',
+    message: `Aura wants to ${actionLabel}.`,
+    detail: detailParts.join('\n\n') || 'No additional details provided.',
+    buttons: ['Allow', 'Cancel'],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true,
+  })
+  return result.response === 0
+}
+
 async function callVaultToolGuarded(name: string, args: Record<string, any>): Promise<string> {
   if (getVaultDisabledTools().includes(name)) {
     return `Tool "${name}" is disabled in Settings → Memory & Sync.`
@@ -248,6 +301,31 @@ async function callVaultToolGuarded(name: string, args: Record<string, any>): Pr
       return `Attention check failed: ${err instanceof Error ? err.message : String(err)}`
     }
   }
+  const gatedCollabLabel = GATED_COLLAB_WRITE_TOOLS[name]
+  if (gatedCollabLabel) {
+    const approved = await confirmCollabWriteAction(gatedCollabLabel, args)
+    if (!approved) {
+      return 'The user declined this coordination-layer action. Do not retry it unless they explicitly ask again.'
+    }
+    if (name === 'vault_collab_publish_handoff') {
+      const status = auraCollabSession.getStatus()
+      const labels = Array.isArray(args.labels) ? args.labels.map(String) : []
+      args = {
+        ...args,
+        sourceProject: 'aura-desktop',
+        ...(status.sessionUid ? { sourceSessionUid: status.sessionUid } : {}),
+        labels: [...new Set([...labels, 'published-by-aura-companion'])],
+      }
+    } else if (COLLAB_TOOLS_NEEDING_OWNER_CREDS.has(name)) {
+      const creds = auraCollabSession.getOwnerCredentials()
+      if (!creds) {
+        return 'Aura is not registered on the coordination layer right now, so this action is unavailable.'
+      }
+      // Token is injected after confirmation and never appears in results.
+      args = { ...args, sessionUid: creds.sessionUid, sessionToken: creds.sessionToken }
+    }
+  }
+
   // save/recall write into (and can implicitly create) a Vault project. The
   // agent may target any EXISTING project (e.g. engineering notes vs. its
   // brain); anything unknown falls back to the configured project, so a new
@@ -815,7 +893,7 @@ function buildVaultToolGuidance(): string {
   }
   if ([...names].some((name) => name.startsWith('vault_collab_'))) {
     lines.push(
-      'vault_collab_* tools are a read-only window into the user\'s agent coordination layer. Use vault_collab_list_sessions ("which agents are active?"), vault_collab_list_inbox ("any open handoffs?"), and the discussion/event readers when asked. vault_collab_check_attention reads YOUR own attention feed (pings and notices addressed to Aura). You can only observe — never claim or modify coordination state.'
+      'vault_collab_* tools are your window into the user\'s agent coordination layer. Reads are free: vault_collab_list_sessions ("which agents are active?"), vault_collab_list_inbox ("any open handoffs?"), discussion/event readers, and vault_collab_check_attention for YOUR own attention feed. Write actions (publish_handoff, claim/update/resolve/release/reopen_handoff, discussion posts) are available but EVERY one pops a confirmation dialog the user must approve — propose them when the user asks (e.g. "file this for the implementer", "mark that handoff done"), never spam them. Identity fields and credentials are filled in automatically; never invent sessionUid or token values.'
     )
   }
   return lines.join('\n')
