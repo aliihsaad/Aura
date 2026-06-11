@@ -60,6 +60,9 @@ export class LLMService extends EventEmitter {
   private apiKey: string
   private model: string
   private routing: LlmRoutingConfig
+  // Endpoint that served the most recent completion — read by the answer
+  // flow after 'done' so the Detail window can show provider + model.
+  private lastServedBy: { provider: string; model: string } | null = null
   private abortController: AbortController | null = null
   private heartbeatAbortController: AbortController | null = null
   private readonly incompleteQuestionToken = 'WAITING_FOR_MORE_CONTEXT'
@@ -71,6 +74,10 @@ export class LLMService extends EventEmitter {
     this.routing = routing?.endpoints.length
       ? routing
       : { endpoints: apiKey ? [openRouterEndpoint(apiKey, model)] : [] }
+  }
+
+  getLastServedBy(): { provider: string; model: string } | null {
+    return this.lastServedBy
   }
 
   setModel(model: string): void {
@@ -417,20 +424,23 @@ export class LLMService extends EventEmitter {
           : {}),
       })
 
-      const response =
-        providerMode === 'routed'
-          ? (
-              await this.requestChatCompletion({
-                purpose: 'stream',
-                signal: this.abortController!.signal,
-                body,
-              })
-            ).response
-          : await this.requestOpenRouterChatCompletion({
-              purpose: 'stream',
-              signal: this.abortController!.signal,
-              body: body(openRouterEndpoint(this.apiKey, this.model)),
-            })
+      let response: Response
+      if (providerMode === 'routed') {
+        const served = await this.requestChatCompletion({
+          purpose: 'stream',
+          signal: this.abortController!.signal,
+          body,
+        })
+        response = served.response
+        this.lastServedBy = { provider: served.endpoint.label, model: served.endpoint.model }
+      } else {
+        response = await this.requestOpenRouterChatCompletion({
+          purpose: 'stream',
+          signal: this.abortController!.signal,
+          body: body(openRouterEndpoint(this.apiKey, this.model)),
+        })
+        this.lastServedBy = { provider: 'OpenRouter', model: this.model }
+      }
 
       const reader = response.body?.getReader()
       if (!reader) throw new Error('No response body reader')

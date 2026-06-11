@@ -480,6 +480,9 @@ export type AnswerAttachment =
 export interface AnswerDonePayload {
   text: string
   attachments?: AnswerAttachment[]
+  /** Endpoint that actually served the final completion (e.g. LLM-Hub vs
+   *  OpenRouter after a fallback) — shown as a badge in the Detail window. */
+  servedBy?: { provider: string; model: string }
 }
 
 export interface SessionReport {

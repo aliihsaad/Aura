@@ -34,6 +34,7 @@ interface AnswerHistoryEntry {
   modelId?: string
   routingReason?: string
   attachments?: AnswerAttachment[]
+  servedBy?: { provider: string; model: string }
 }
 
 export default function App() {
@@ -48,6 +49,7 @@ export default function App() {
     user: '',
   })
   const [currentAnswer, setCurrentAnswer] = useState('')
+  const [currentServedBy, setCurrentServedBy] = useState<{ provider: string; model: string } | null>(null)
   const [currentAttachments, setCurrentAttachments] = useState<AnswerAttachment[]>([])
   const [answerHistory, setAnswerHistory] = useState<AnswerHistoryEntry[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -117,6 +119,7 @@ export default function App() {
       if (answer === '') {
         pendingAnswerQuestionRef.current = pendingAnswerQuestionRef.current || latestQuestionRef.current || 'Current Prompt'
         setCurrentAttachments([])
+        setCurrentServedBy(null)
       }
       setShowAnswerPane(true)
       setCurrentAnswer(answer)
@@ -125,6 +128,8 @@ export default function App() {
     const cleanupDone = window.api.onAnswerDone((payload: string | AnswerDonePayload) => {
       const answer = typeof payload === 'string' ? payload : payload.text
       const attachments = typeof payload === 'string' ? [] : payload.attachments ?? []
+      const servedBy = typeof payload === 'string' ? undefined : payload.servedBy
+      setCurrentServedBy(servedBy ?? null)
       if (answer.trim()) {
         setShowAnswerPane(true)
       }
@@ -142,6 +147,7 @@ export default function App() {
             modelId: currentModelSelectionRef.current.modelId,
             routingReason: currentModelSelectionRef.current.reason,
             attachments,
+            servedBy,
           }
 
           const isDuplicate =
@@ -534,6 +540,9 @@ export default function App() {
   const displayedRoutingReason = isAnswering
     ? currentModelSelection.reason
     : selectedHistoryEntry?.routingReason || currentModelSelection.reason
+  const displayedServedBy = isAnswering
+    ? null
+    : selectedHistoryEntry?.servedBy || currentServedBy
   const detailCapabilities = getSessionBehavior(currentSessionIntent || 'quick-help').detailCapabilities
 
   useEffect(() => {
@@ -657,6 +666,7 @@ export default function App() {
               detailCapabilities={detailCapabilities}
               modelId={displayedModelId}
               routingReason={displayedRoutingReason}
+              servedBy={displayedServedBy ?? undefined}
               onClear={handleClearAnswers}
               onClose={handleHideAnswerWindow}
             />

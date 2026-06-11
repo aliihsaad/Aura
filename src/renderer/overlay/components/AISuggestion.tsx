@@ -45,6 +45,8 @@ interface AISuggestionProps {
   question: string
   modelId?: string
   routingReason?: string
+  /** Endpoint that actually served the answer (LLM-Hub vs OpenRouter). */
+  servedBy?: { provider: string; model: string }
   canGoBack?: boolean
   canGoForward?: boolean
   historyLabel?: string
@@ -62,6 +64,7 @@ export default function AISuggestion({
   question,
   modelId = '',
   routingReason = '',
+  servedBy,
   canGoBack = false,
   canGoForward = false,
   historyLabel,
@@ -259,9 +262,24 @@ export default function AISuggestion({
             <span className="text-[11px] font-semibold uppercase tracking-widest text-white/30">
               Detail
             </span>
-            {modelId && (
-              <span className="rounded-md border border-white/[0.06] bg-white/[0.05] px-2 py-0.5 text-[9.5px] font-medium tracking-wide text-white/35">
-                {getModelDisplayName(modelId)}
+            {(servedBy || modelId) && (
+              <span
+                className="rounded-md border border-white/[0.06] bg-white/[0.05] px-2 py-0.5 text-[9.5px] font-medium tracking-wide text-white/35"
+                title={servedBy ? `${servedBy.model} via ${servedBy.provider}` : modelId}
+              >
+                {getModelDisplayName(servedBy?.model || modelId)}
+              </span>
+            )}
+            {servedBy && (
+              <span
+                className={`rounded-md px-2 py-0.5 text-[9.5px] font-medium tracking-wide ${
+                  servedBy.provider === 'LLM-Hub'
+                    ? 'border border-emerald-400/[0.12] bg-emerald-400/[0.06] text-emerald-300/60'
+                    : 'border border-white/[0.06] bg-white/[0.05] text-white/35'
+                }`}
+                title={`Served by ${servedBy.provider}`}
+              >
+                {servedBy.provider === 'LLM-Hub' ? 'LLM-Hub · free' : servedBy.provider}
               </span>
             )}
             {routingReason && (

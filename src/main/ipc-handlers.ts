@@ -3888,6 +3888,7 @@ function completeAnswerStream(answer: string, question: string): void {
       sendSessionAnswerDone({
         text: value,
         attachments: pendingAnswerAttachments.length ? [...pendingAnswerAttachments] : undefined,
+        servedBy: sessionRuntimeStore.llmService?.getLastServedBy() ?? undefined,
       })
       if (sessionRuntimeStore.isSessionActive) {
         heartbeatService.setPresenceState('listening')
