@@ -71,7 +71,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     function: {
       name: 'search_web',
       description:
-        'Search the public web for current information and source links. Use this when the user asks for recent facts, web references, or information that may not be in the workspace or memory.',
+        'Search the public web for current information and source links. Use this when the user asks for recent facts, web references, or information that may not be in the workspace or memory. Results are titles, URLs, and snippets only — chain with read_webpage to read the content of a promising result.',
       parameters: {
         type: 'object',
         properties: {
@@ -85,6 +85,24 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
           },
         },
         required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'read_webpage',
+      description:
+        'Fetch a public web page and return its readable text content. Use this to read a search_web result or a URL the user mentions. Returns up to ~8k characters of extracted article text; not suitable for binary files or script-only apps.',
+      parameters: {
+        type: 'object',
+        properties: {
+          url: {
+            type: 'string',
+            description: 'The http(s) URL of the page to read.',
+          },
+        },
+        required: ['url'],
       },
     },
   },
@@ -440,6 +458,13 @@ interface ToolExecutorDeps {
     provider: string
     results: Array<{ title: string; url: string; snippet?: string }>
   }>
+  readWebPage?: (url: string) => Promise<{
+    url: string
+    finalUrl: string
+    title?: string
+    text: string
+    truncated: boolean
+  }>
   generateImage?: (params: {
     prompt: string
     size?: '1024x1024' | '1536x1024' | '1024x1536' | 'auto'
@@ -483,6 +508,8 @@ export function createToolExecutor(deps: ToolExecutorDeps): ToolExecutorFn {
           return executeGetSessionContext(deps)
         case 'search_web':
           return await executeSearchWeb(deps, args)
+        case 'read_webpage':
+          return await executeReadWebpage(deps, args)
         case 'generate_image':
           return await executeGenerateImage(deps, args)
         case 'analyze_current_screen':
@@ -692,6 +719,32 @@ async function executeSearchWeb(deps: ToolExecutorDeps, args: Record<string, any
     '',
     ...lines,
   ].join('\n')
+}
+
+async function executeReadWebpage(deps: ToolExecutorDeps, args: Record<string, any>): Promise<string> {
+  if (!deps.readWebPage) {
+    return 'Web page reading is not available right now.'
+  }
+
+  const url = String(args.url ?? '').trim()
+  if (!url) {
+    return 'Cannot read the page: url is required.'
+  }
+
+  try {
+    const page = await deps.readWebPage(url)
+    return [
+      page.title ? `Title: ${page.title}` : null,
+      `URL: ${page.finalUrl}`,
+      page.truncated ? 'Note: content was truncated — this is the beginning of the page.' : null,
+      '',
+      page.text,
+    ]
+      .filter((line) => line !== null)
+      .join('\n')
+  } catch (error) {
+    return `Could not read the page: ${error instanceof Error ? error.message : String(error)}`
+  }
 }
 
 async function executeGenerateImage(deps: ToolExecutorDeps, args: Record<string, any>): Promise<string> {

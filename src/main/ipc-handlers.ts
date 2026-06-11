@@ -80,6 +80,7 @@ import { SUPPORTED_LANGUAGES } from '@shared/constants'
 import { SessionPersistenceService } from './services/session-persistence-service'
 import { TerminalService } from './services/terminal-service'
 import { WebSearchService } from './services/web-search-service'
+import { WebPageReaderService } from './services/web-page-reader-service'
 import { ImageGenerationService } from './services/image-generation-service'
 import { markdownToPlaintext } from './services/markdown-plaintext'
 import { ModeConfigService } from './services/mode-config-service'
@@ -417,6 +418,7 @@ const sessionRuntimeStore = new SessionRuntimeStore()
 const widgetManager = new WidgetManager()
 const sessionLifecycleService = new SessionLifecycleService(contextManager, recallService)
 const webSearchService = new WebSearchService()
+const webPageReaderService = new WebPageReaderService()
 const conversationLog = new ConversationLogService()
 let localAiManager: LocalAiManager | null = null
 
@@ -704,6 +706,7 @@ function buildSharedToolExecutor() {
     openAnswerWindow: showAgentAnswerWindow,
     solveWithOpenRouter: delegateComplexOpenRouterAnswer,
     searchWeb: (query, limit) => webSearchService.search(query, limit),
+    readWebPage: (url) => webPageReaderService.read(url),
     generateImage: (params) => generateImageArtifact(params),
     requestApproval: requestApproval,
     sessionFolderName: sessionRuntimeStore.currentSessionFolderName || undefined,
@@ -770,6 +773,7 @@ const REALTIME_COMPANION_BLOCKED_TOOLS = new Set([
   'create_workspace_directory',
   'run_terminal_command',
   'search_web',
+  'read_webpage',
   'generate_image',
   'analyze_workspace_code',
 ])

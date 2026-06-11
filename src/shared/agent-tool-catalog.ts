@@ -62,6 +62,12 @@ export const AGENT_TOOL_CATALOG: AgentToolInfo[] = [
     locked: true,
   },
   {
+    name: 'read_webpage',
+    description: 'Fetch a public web page and return its readable text content.',
+    scope: 'core',
+    locked: true,
+  },
+  {
     name: 'generate_image',
     description: 'Generate an image from a text prompt and save it as an artifact.',
     scope: 'core',

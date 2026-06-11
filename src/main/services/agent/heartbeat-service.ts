@@ -43,6 +43,7 @@ const HEARTBEAT_BLOCKED_TOOLS = new Set([
   'create_workspace_directory',
   'run_terminal_command',
   'search_web',
+  'read_webpage',
   'generate_image',
   'analyze_workspace_code',
 ])
