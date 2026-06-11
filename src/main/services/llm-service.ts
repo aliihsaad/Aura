@@ -6,6 +6,7 @@ import {
   openRouterEndpoint,
   shouldFallbackAfterStatus,
 } from './llm-routing'
+import { resolveRelayModelId } from './llm-routing-factory'
 import {
   LLMRequest,
   TranscriptEntry,
@@ -83,14 +84,18 @@ export class LLMService extends EventEmitter {
   setModel(model: string): void {
     this.model = model
     this.routing = {
-      endpoints: this.routing.endpoints.map((endpoint) =>
-        endpoint.tracksModelSelection
-          ? {
-              ...endpoint,
-              model,
-            }
-          : endpoint
-      ),
+      endpoints: this.routing.endpoints
+        .map((endpoint) => {
+          if (!endpoint.tracksModelSelection) return endpoint
+          if (endpoint.id === 'freellmapi') {
+            // The relay may serve this model under a native id (or not at
+            // all) — drop the endpoint rather than send an unknown id.
+            const relayModelId = resolveRelayModelId(model)
+            return relayModelId ? { ...endpoint, model: relayModelId } : null
+          }
+          return { ...endpoint, model }
+        })
+        .filter((endpoint): endpoint is LlmEndpoint => endpoint !== null),
     }
   }
 

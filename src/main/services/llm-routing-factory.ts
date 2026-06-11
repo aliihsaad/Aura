@@ -32,8 +32,31 @@ const MODELS_CACHE_TTL_MS = 60 * 60 * 1000
 const MODELS_FETCH_TIMEOUT_MS = 10_000
 
 let getRelaySource: (() => RelaySource) | null = null
-let modelsCache: { byId: Map<string, RelayModelInfo>; fetchedAt: number; baseUrl: string } | null = null
+let modelsCache: {
+  byId: Map<string, RelayModelInfo>
+  /** Last path segment → canonical relay id. The relay serves Google models
+   * under native ids (`gemini-3-flash-preview`) while Aura configures
+   * OpenRouter ids (`google/gemini-3-flash-preview`) — basename matching
+   * bridges the two naming schemes. */
+  byBasename: Map<string, string>
+  fetchedAt: number
+  baseUrl: string
+} | null = null
 let refreshInFlight = false
+
+function basenameOf(model: string): string {
+  const segments = model.split('/')
+  return (segments[segments.length - 1] || model).toLowerCase()
+}
+
+/** Canonical relay id for a requested model, or null when the relay does not
+ * serve it under any known name. */
+export function resolveRelayModelId(model: string): string | null {
+  if (!modelsCache) return null
+  const requested = model.trim()
+  if (modelsCache.byId.has(requested)) return requested
+  return modelsCache.byBasename.get(basenameOf(requested)) ?? null
+}
 
 /** Wire the factory to live config (called once from ipc-handlers) and warm
  * the model cache in the background. */
@@ -65,11 +88,22 @@ export function buildLlmRouting(
   if (relay?.enabled && relay.baseUrl.trim()) {
     void maybeRefreshRelayModels()
     const baseUrl = normalizeOpenAiBaseUrl(relay.baseUrl, relay.baseUrl)
-    const info = modelsCache?.baseUrl === baseUrl ? modelsCache.byId.get(model) : undefined
+    const relayModelId = modelsCache?.baseUrl === baseUrl ? resolveRelayModelId(model) : null
+    const info = relayModelId ? modelsCache!.byId.get(relayModelId) : undefined
+    // Vision: block only when the relay explicitly lists capabilities that
+    // exclude vision. When metadata is absent (current hub deployments omit
+    // it), stay optimistic — a vision-incapable relay model errors and the
+    // OpenRouter fallback catches it.
     const visionOk =
-      !opts?.vision || info?.capabilities.some((cap) => /vision|image|multimodal/i.test(cap))
-    if (info && visionOk) {
-      endpoints.push(freeLlmApiEndpoint(baseUrl, relay.apiKey, model))
+      !opts?.vision ||
+      !info ||
+      info.capabilities.length === 0 ||
+      info.capabilities.some((cap) => /vision|image|multimodal/i.test(cap))
+    if (relayModelId && visionOk) {
+      endpoints.push(freeLlmApiEndpoint(baseUrl, relay.apiKey, relayModelId))
+      console.log(
+        `[LLMRouting] ${model} → LLM-Hub first${relayModelId !== model ? ` (as ${relayModelId})` : ''}, OpenRouter fallback.`
+      )
     }
   }
 
@@ -100,6 +134,7 @@ async function maybeRefreshRelayModels(): Promise<void> {
     }
     const parsed = await response.json()
     const byId = new Map<string, RelayModelInfo>()
+    const byBasename = new Map<string, string>()
     for (const entry of Array.isArray(parsed?.data) ? parsed.data : []) {
       const id = String(entry?.id ?? '').trim()
       if (!id) continue
@@ -112,8 +147,10 @@ async function maybeRefreshRelayModels(): Promise<void> {
           : undefined,
         capabilities: Array.isArray(entry?.capabilities) ? entry.capabilities.map(String) : [],
       })
+      const basename = basenameOf(id)
+      if (!byBasename.has(basename)) byBasename.set(basename, id)
     }
-    modelsCache = { byId, fetchedAt: Date.now(), baseUrl }
+    modelsCache = { byId, byBasename, fetchedAt: Date.now(), baseUrl }
     console.log(`[LLMRouting] relay model cache refreshed: ${byId.size} routable model(s).`)
   } catch (err) {
     // Keep any stale cache; routing simply stays OpenRouter-only for unknown ids.
