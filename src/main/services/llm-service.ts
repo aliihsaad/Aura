@@ -429,8 +429,17 @@ export class LLMService extends EventEmitter {
           : {}),
       })
 
+      // Tool calling through the relay is unreliable — hub-served models have
+      // claimed tool results (e.g. "I generated the logos") without ever
+      // invoking the tool. Requests that carry tools stay on OpenRouter;
+      // tool-less calls (screen summaries, helpers) keep the free-first path.
+      const effectiveProviderMode = availableTools.length > 0 ? 'openrouter-only' : providerMode
+      if (effectiveProviderMode !== providerMode) {
+        console.log('[LLMRouting] request carries tools — routing to OpenRouter directly.')
+      }
+
       let response: Response
-      if (providerMode === 'routed') {
+      if (effectiveProviderMode === 'routed') {
         const served = await this.requestChatCompletion({
           purpose: 'stream',
           signal: this.abortController!.signal,
