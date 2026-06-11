@@ -1818,6 +1818,11 @@ export function setupIpcHandlers(): void {
       },
       onAnswerError: reportAnswerError,
       playRealtimeAudio: true,
+      // Mark-XXXIX-style half-duplex gate: while Aura's voice plays through
+      // the speakers (+ tail), drop mic frames entirely unless the overlay's
+      // render-reference detector confirms a genuine user barge-in. Without
+      // this, speaker echo loops straight back into the realtime model.
+      shouldSuppressMicCapture: () => !voiceBargeInOpen && shouldSuppressCapturedSystemAudio(),
       onCompanionTextStart: handleRealtimeCompanionTextStart,
       onCompanionTextToken: handleRealtimeCompanionTextToken,
       onCompanionTextEnd: handleRealtimeCompanionTextEnd,

@@ -52,6 +52,11 @@ export interface CompanionRealtimePipelineDeps {
   onAnswerDone: (answer: string) => void
   onAnswerError: (error: Error) => void
   playRealtimeAudio?: boolean
+  /** Half-duplex echo gate: true while Aura's own voice is playing through
+   * the speakers (plus a short tail) and the user has NOT genuinely barged
+   * in. Mic chunks are dropped instead of streamed, so without headphones
+   * the model never hears its own echo and loops on it. */
+  shouldSuppressMicCapture?: () => boolean
   onCompanionTextStart?: () => void
   onCompanionTextToken?: (fullText: string, delta: string) => void
   onCompanionTextEnd?: (fullText: string) => void
@@ -75,6 +80,7 @@ export class CompanionRealtimePipeline extends BasePipeline {
 
   private readonly handleAudioData = ({ source, chunk }: AudioDataEvent): void => {
     if (source !== 'user') return
+    if (this.deps.shouldSuppressMicCapture?.()) return
     this.client?.sendAudioChunk(chunk)
   }
 
