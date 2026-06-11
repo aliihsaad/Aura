@@ -142,7 +142,7 @@ import {
 import { SessionBrainService } from './services/agent/session-brain-service'
 import { McpClientManager, resolveVaultServerConfigs } from './services/mcp/mcp-client-manager'
 import { AuraCollabSession } from './services/mcp/aura-collab-session'
-import { buildVaultRecallContext, saveVaultSessionMemory, DEFAULT_VAULT_MEMORY_PROJECT } from './services/mcp/vault-session-memory'
+import { buildVaultRecallContext, saveVaultSessionMemory } from './services/mcp/vault-session-memory'
 import { AgentEngine, AgentMode, PersonalityPreset, InterruptionPolicy } from '@shared/types'
 import { KernelChannels, ModeChannels } from '@shared/ipc-channels'
 import ElectronStore from 'electron-store'
@@ -197,11 +197,11 @@ function getVaultDisabledTools(): string[] {
   return Array.isArray(raw) ? raw.map(String) : []
 }
 
-/** Vault project for Aura's own session memories (identity/companion side).
- * Engineering memories live in 'aura-desktop-build'. */
+/** User-configured Vault project for Aura's memories (Settings → Memory &
+ * Sync). Empty string means "not configured" — every vault-memory save and
+ * recall is skipped, and Aura never creates or derives a project itself. */
 function getVaultMemoryProject(): string {
-  const configured = String(configStore.get('vaultMemoryProject', '') || '').trim()
-  return configured || DEFAULT_VAULT_MEMORY_PROJECT
+  return String(configStore.get('vaultMemoryProject', '') || '').trim()
 }
 
 // Synthetic agent tool: drains Aura's OWN collab attention feed through the
@@ -244,6 +244,16 @@ async function callVaultToolGuarded(name: string, args: Record<string, any>): Pr
     } catch (err) {
       return `Attention check failed: ${err instanceof Error ? err.message : String(err)}`
     }
+  }
+  // save/recall write into (and can implicitly create) a Vault project, so
+  // the project is always the user-configured one — never the model's pick.
+  if (name === 'vault_memory_save_memory' || name === 'vault_memory_recall_context') {
+    const project = getVaultMemoryProject()
+    if (!project) {
+      console.warn('[VaultMemory] no project configured, skipping save/recall.')
+      return 'No Vault memory project is configured — set one in Settings → Memory & Sync first.'
+    }
+    args = { ...args, project }
   }
   return vaultMcpManager.callBridgedTool(name, args)
 }
@@ -2607,10 +2617,14 @@ export function setupIpcHandlers(): void {
   // ── Vault MCP bridge (Phase 2) ─────────────────────────────────
   ipcMain.handle('vault:memory:recall', async (_event, topic?: string) => {
     const base = contextManager.getSessionContext()
-    const context = await buildVaultRecallContext(vaultMcpManager, {
-      ...base,
-      subject: topic?.trim() || base.subject,
-    })
+    const context = await buildVaultRecallContext(
+      vaultMcpManager,
+      {
+        ...base,
+        subject: topic?.trim() || base.subject,
+      },
+      getVaultMemoryProject()
+    )
     return { success: true, connected: vaultMcpManager.isConnected('vault_memory'), context }
   })
 
@@ -2620,10 +2634,15 @@ export function setupIpcHandlers(): void {
     if (!title && !content) {
       return { success: false, error: 'Nothing to save — provide a title or content.' }
     }
+    const vaultProject = getVaultMemoryProject()
+    if (!vaultProject) {
+      console.warn('[VaultMemory] no project configured, skipping save.')
+      return { success: false, error: 'No Vault memory project configured — set one in Settings → Memory & Sync.' }
+    }
     try {
       const result = await vaultMcpManager.callTool('vault_memory', 'vault_save_memory', {
         title: title || `Aura note (${new Date().toISOString().slice(0, 10)})`,
-        project: getVaultMemoryProject(),
+        project: vaultProject,
         memory_type: 'reference',
         subject: String(payload?.subject ?? '').trim() || title || 'Aura note',
         summary: String(payload?.summary ?? '').trim() || content.slice(0, 300) || title,

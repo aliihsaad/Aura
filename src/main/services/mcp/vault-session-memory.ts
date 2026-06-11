@@ -9,20 +9,24 @@ import type { McpClientManager } from './mcp-client-manager'
  * heartbeat/realtime hot paths never wait on Vault.
  */
 
-/** Fallback when no project is configured. 'Aura-Brain' is the Vault
- * project that holds Aura's identity and companion session memories
- * (the engineering project is 'aura-desktop-build'). */
-export const DEFAULT_VAULT_MEMORY_PROJECT = 'Aura-Brain'
 const RECALL_TIMEOUT_MS = 15_000
 const RECALL_LIMIT = 6
 const RECALL_MAX_CHARS = 4_000
 
+// Vault projects are created by the user, never by Aura. The target project
+// comes from config (Settings → Memory & Sync); when it's empty, every
+// save/recall is skipped instead of guessing or deriving a name.
+
 export async function buildVaultRecallContext(
   manager: McpClientManager,
   sessionContext: SessionContext,
-  project: string = DEFAULT_VAULT_MEMORY_PROJECT
+  project: string
 ): Promise<string> {
   if (!manager.isConnected('vault_memory')) return ''
+  if (!project.trim()) {
+    console.warn('[VaultMemory] no project configured, skipping recall.')
+    return ''
+  }
 
   const topic = describeSessionTopic(sessionContext)
   try {
@@ -30,7 +34,7 @@ export async function buildVaultRecallContext(
       'vault_memory',
       'vault_recall_context',
       {
-        project,
+        project: project.trim(),
         query_text: topic || 'recent context for a new companion session',
         limit: RECALL_LIMIT,
       },
@@ -55,7 +59,8 @@ export interface VaultSessionSavePayload {
   startedAt: number | null
   endedAt: number
   transcript: TranscriptEntry[]
-  project?: string
+  /** User-configured Vault project; empty means "don't save". */
+  project: string
 }
 
 /** Fire-and-forget save of the finished session. Never throws. */
@@ -65,6 +70,10 @@ export async function saveVaultSessionMemory(
 ): Promise<void> {
   if (!manager.isConnected('vault_memory')) {
     console.log('[VaultMemory] save skipped — vault-memory not connected.')
+    return
+  }
+  if (!payload.project.trim()) {
+    console.warn('[VaultMemory] no project configured, skipping save.')
     return
   }
 
@@ -83,7 +92,7 @@ export async function saveVaultSessionMemory(
   try {
     await manager.callTool('vault_memory', 'vault_save_memory', {
       title: `Aura session — ${subject} (${dateLabel})`,
-      project: payload.project || DEFAULT_VAULT_MEMORY_PROJECT,
+      project: payload.project.trim(),
       // The vault-memory schema has no 'conversation' type; 'session' is its
       // canonical equivalent for a finished interactive session.
       memory_type: 'session',

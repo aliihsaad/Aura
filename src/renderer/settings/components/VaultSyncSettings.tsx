@@ -50,6 +50,7 @@ function StatusDot({ state }: { state: ConnectionState }) {
 export default function VaultSyncSettings() {
   const [status, setStatus] = useState<VaultMcpStatus | null>(null)
   const [memoryEnabled, setMemoryEnabled] = useState(true)
+  const [memoryProject, setMemoryProject] = useState('')
   const [collabEnabled, setCollabEnabled] = useState(true)
   const [disabledTools, setDisabledTools] = useState<string[]>([])
   const [draining, setDraining] = useState(false)
@@ -67,6 +68,7 @@ export default function VaultSyncSettings() {
   useEffect(() => {
     void (window.api.getConfig() as Promise<any>).then((config) => {
       setMemoryEnabled(config?.vaultMemoryEnabled ?? true)
+      setMemoryProject(typeof config?.vaultMemoryProject === 'string' ? config.vaultMemoryProject : '')
       setCollabEnabled(config?.vaultCollabEnabled ?? true)
       setDisabledTools(Array.isArray(config?.vaultDisabledTools) ? config.vaultDisabledTools : [])
     })
@@ -74,6 +76,10 @@ export default function VaultSyncSettings() {
     const timer = setInterval(() => void refresh(), 5000)
     return () => clearInterval(timer)
   }, [refresh])
+
+  const saveMemoryProject = async (value: string) => {
+    await window.api.setConfig({ vaultMemoryProject: value.trim() })
+  }
 
   const setServerEnabled = async (key: 'vaultMemoryEnabled' | 'vaultCollabEnabled', value: boolean) => {
     if (key === 'vaultMemoryEnabled') setMemoryEnabled(value)
@@ -162,6 +168,26 @@ export default function VaultSyncSettings() {
               {memoryEnabled ? <ToggleRight size={28} className="text-blue-400" /> : <ToggleLeft size={28} />}
             </button>
           </div>
+          {memoryEnabled && (
+            <div className="mt-3">
+              <label className="block text-[10.5px] text-white/30 uppercase tracking-wider mb-1.5">
+                Vault memory project
+              </label>
+              <input
+                type="text"
+                value={memoryProject}
+                onChange={(e) => setMemoryProject(e.target.value)}
+                onBlur={() => void saveMemoryProject(memoryProject)}
+                placeholder="e.g. Aura-Brain"
+                spellCheck={false}
+                className="w-full rounded-xl bg-black/20 border border-white/[0.06] px-3 py-2 text-[12px] text-white/70 placeholder:text-white/20 focus:outline-none focus:border-blue-400/40 transition-colors"
+              />
+              <p className="text-[10.5px] text-white/25 mt-1.5">
+                Memories save to and recall from this existing Vault project. Leave empty to keep
+                Vault memory off — Aura never creates projects on its own.
+              </p>
+            </div>
+          )}
           {memoryEnabled && memoryTools.length > 0 && (
             <div className="mt-3 ml-1 border-l border-white/5 pl-4">
               <div className="text-[10.5px] text-white/30 uppercase tracking-wider mb-1">Agent tools</div>
