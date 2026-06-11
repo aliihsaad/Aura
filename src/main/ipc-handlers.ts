@@ -68,6 +68,7 @@ import {
 import { RecallService } from './services/memory/recall-service'
 import { AudioCaptureService } from './audio/capture'
 import { AGENT_TOOL_CATALOG } from '@shared/agent-tool-catalog'
+import { formatCurrentDateTime } from '@shared/prompts'
 import { selectModel, AnswerSource } from '@shared/model-selection'
 import {
   isExternalAudioEntry,
@@ -668,6 +669,7 @@ function buildRealtimeCompanionInstructions(): string {
       : '',
     'Realtime audio is the spoken output. Keep the output transcription clean because Aura uses it for the bubble and session record; do not narrate tool internals.',
     'Use the available profile and session context without reciting it.',
+    line('Current date and time', formatCurrentDateTime()),
     line('User name', profile.name),
     line('Occupation', profile.occupation),
     line('Communication style', profile.commsStyle),

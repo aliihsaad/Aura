@@ -13,6 +13,7 @@ import {
 import { HEARTBEAT_COOLDOWNS, HEARTBEAT_DEFAULTS } from '@shared/constants'
 import { resolvePersonality, PersonalityConfig } from '@shared/personalities'
 import { getSessionBehavior } from '@shared/session-intent-policy'
+import { formatCurrentDateTime } from '@shared/prompts'
 import { MemoryStore } from '../memory/memory-store'
 import { EventStore } from '../memory/event-store'
 import { LLMService } from '../llm-service'
@@ -750,6 +751,9 @@ export class HeartbeatService {
     const parts: string[] = []
     const trim = (s: string, max: number): string =>
       s.length > max ? s.slice(0, max).trimEnd() + '…' : s
+
+    // Rebuilt every tick, so the agent always knows the real wall-clock time.
+    parts.push(`Current date and time: ${formatCurrentDateTime()}`)
 
     if (sessionContext) {
       const behavior = getSessionBehavior(sessionContext.sessionIntent || 'quick-help')

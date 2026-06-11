@@ -1,6 +1,21 @@
 import { ProfileContext, SessionContext, SessionIntent, UserContext } from './types'
 import { getSessionBehavior } from './session-intent-policy'
 
+/** Human-readable local "now" for prompt grounding, e.g.
+ * "Wednesday, June 11, 2026, 09:58". Rebuilt on every prompt assembly so
+ * long sessions don't drift. */
+export function formatCurrentDateTime(): string {
+  return new Date().toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+}
+
 export function buildSystemPrompt(
   profileOrContext: ProfileContext | UserContext,
   session: SessionContext,
@@ -90,6 +105,8 @@ export function buildSystemPrompt(
     : ''
 
   return `You are Aura acting as a ${behavior.agentRole} for ${userName} during a live session.
+
+Current date and time: ${formatCurrentDateTime()}.
 
 Your single job: produce the most directly useful response for the user's current request. Write like a sharp local copilot, not an essay.
 ${backgroundBlock}
