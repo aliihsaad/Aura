@@ -14,6 +14,8 @@ export default function ApiConfig() {
   const [deepgramKey, setDeepgramKey] = useState('')
   const [freeLlmApiKey, setFreeLlmApiKey] = useState('')
   const [freeLlmApiBaseUrl, setFreeLlmApiBaseUrl] = useState(DEFAULT_FREELLMAPI_BASE_URL)
+  const [freeLlmRoutingEnabled, setFreeLlmRoutingEnabled] = useState(true)
+  const [relayModels, setRelayModels] = useState<Array<{ id: string; name?: string; ownedBy?: string }>>([])
   const [companionVoiceModel, setCompanionVoiceModel] = useState('aura-2-thalia-en')
   const [companionEngine, setCompanionEngine] = useState<'classic' | 'realtime-beta'>('classic')
   const [companionRealtimeModel, setCompanionRealtimeModel] = useState('auto')
@@ -81,6 +83,13 @@ export default function ApiConfig() {
       setDeepgramKey(config.deepgramApiKey || '')
       setFreeLlmApiKey(config.freeLlmApiKey || '')
       setFreeLlmApiBaseUrl(config.freeLlmApiBaseUrl || DEFAULT_FREELLMAPI_BASE_URL)
+      setFreeLlmRoutingEnabled(config.freeLlmRoutingEnabled ?? true)
+      try {
+        const models = await (window.api as any).getRelayModels?.()
+        if (Array.isArray(models)) setRelayModels(models)
+      } catch {
+        // relay offline — the routing falls back to OpenRouter anyway
+      }
       setCompanionVoiceModel(config.companionVoiceModel ?? 'aura-2-thalia-en')
       setCompanionEngine((config.companionEngine || 'classic') as 'classic' | 'realtime-beta')
       setCompanionRealtimeModel(config.companionRealtimeModel || 'auto')
@@ -114,6 +123,7 @@ export default function ApiConfig() {
       deepgramApiKey: deepgramKey,
       freeLlmApiKey,
       freeLlmApiBaseUrl,
+      freeLlmRoutingEnabled,
       defaultModel: model,
       codingModel,
       imageGenerationModel,
@@ -146,23 +156,25 @@ export default function ApiConfig() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  // Verified against the live OpenRouter catalog 2026-06-11 — also served by
+  // the LLM-Hub relay where ids overlap (e.g. the :free OpenRouter models).
   const models = [
     { id: 'google/gemma-4-26b-a4b-it:free', name: 'Gemma 4 26B', cost: 'Free', tier: 'free', codingRec: false, vision: true },
-    { id: 'google/gemma-4-31b-it:free', name: 'Gemma 4 31B', cost: 'Free', tier: 'free', codingRec: false, vision: true },
+    { id: 'qwen/qwen3-coder:free', name: 'Qwen3 Coder', cost: 'Free', tier: 'free', codingRec: 'Free coding', vision: false },
     { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', cost: 'Cheap & fast', tier: 'budget', codingRec: false, vision: true },
-    { id: 'google/gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite', cost: 'Cheapest', tier: 'budget', codingRec: false, vision: true },
-    { id: 'deepseek/deepseek-chat-v3-0324', name: 'DeepSeek V3', cost: '$0.30/1M in', tier: 'budget', codingRec: 'Best value', vision: false },
-    { id: 'meta-llama/llama-4-scout', name: 'Llama 4 Scout', cost: '$0.15/1M in', tier: 'budget', codingRec: false, vision: true },
-    { id: 'openai/gpt-4.1-mini', name: 'GPT-4.1 Mini', cost: '$0.40/1M in', tier: 'mid', codingRec: 'Strong', vision: true },
-    { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku', cost: '$0.80/1M in', tier: 'mid', codingRec: false, vision: true },
-    { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', cost: '$3/1M in', tier: 'premium', codingRec: 'Top tier', vision: true },
+    { id: 'google/gemini-3.5-flash', name: 'Gemini 3.5 Flash', cost: 'Newest flash', tier: 'budget', codingRec: false, vision: true },
+    { id: 'google/gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', cost: 'Cheapest', tier: 'budget', codingRec: false, vision: true },
+    { id: 'deepseek/deepseek-v4-flash', name: 'DeepSeek V4 Flash', cost: 'Budget', tier: 'budget', codingRec: 'Best value', vision: false },
+    { id: 'openai/gpt-5.4-mini', name: 'GPT-5.4 Mini', cost: 'Mid-tier', tier: 'mid', codingRec: 'Strong', vision: true },
+    { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5', cost: 'Mid-tier', tier: 'mid', codingRec: false, vision: true },
+    { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', cost: 'Premium', tier: 'premium', codingRec: 'Top tier', vision: true },
   ]
 
   const imageModels = [
     { id: 'google/gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image', note: 'Default, low cost' },
     { id: 'google/gemini-3.1-flash-image-preview', name: 'Gemini 3.1 Flash Image Preview', note: 'Newer preview' },
-    { id: 'black-forest-labs/flux.2-pro', name: 'Flux 2 Pro', note: 'High quality' },
-    { id: 'black-forest-labs/flux.2-flex', name: 'Flux 2 Flex', note: 'Flexible generation' },
+    { id: 'google/gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image', note: 'Higher quality' },
+    { id: 'openai/gpt-5-image-mini', name: 'GPT-5 Image Mini', note: 'OpenAI, mid cost' },
   ]
 
   const tierColors: Record<string, string> = {
@@ -283,8 +295,43 @@ export default function ApiConfig() {
             />
           </div>
 
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[12.5px] text-white/60">Prefer LLM-Hub for reasoning &amp; vision</div>
+              <div className="text-[11px] text-white/30 mt-0.5">
+                Brain, screen analysis, and deep answers try the free relay first and fall back to
+                OpenRouter automatically.
+                {relayModels.length > 0 && (
+                  <span className="text-emerald-400/50"> {relayModels.length} model(s) routable now.</span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setFreeLlmRoutingEnabled(!freeLlmRoutingEnabled)}
+              className="shrink-0 text-white/60 hover:text-white/80 transition-colors"
+            >
+              {freeLlmRoutingEnabled ? <ToggleRight size={28} className="text-blue-400" /> : <ToggleLeft size={28} />}
+            </button>
+          </div>
+
+          {freeLlmRoutingEnabled && relayModels.length > 0 && (
+            <div className="rounded-xl bg-white/[0.015] border border-white/[0.045] px-3 py-2.5 max-h-36 overflow-y-auto">
+              <div className="text-[10.5px] font-semibold text-white/35 uppercase tracking-wider mb-1.5">
+                Relay models available now
+              </div>
+              {relayModels.map((m) => (
+                <div key={m.id} className="flex items-baseline gap-2 py-0.5">
+                  <span className="text-[11px] font-mono text-white/50 truncate">{m.id}</span>
+                  {m.ownedBy && <span className="text-[10px] text-white/25 shrink-0">{m.ownedBy}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="rounded-xl border border-blue-400/10 bg-blue-400/2.5 px-3 py-3 text-[11px] leading-relaxed text-blue-100/35">
-            OpenRouter runs Classic Companion reasoning. Deepgram is used for speech-to-text and Classic Companion voice. FreeLLMAPI is only used when Companion engine is set to Realtime Beta.
+            Deepgram handles speech-to-text and Classic Companion voice. LLM-Hub (FreeLLMAPI) powers
+            the Realtime Beta engine and, when the toggle above is on, serves reasoning and vision
+            calls first — OpenRouter is the always-on fallback.
           </div>
         </div>
       </div>

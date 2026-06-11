@@ -109,6 +109,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: rgba(77, 124, 254, 0.2);
 }
 
+/* Native dropdown lists: without color-scheme the popup renders in light
+   mode and option text disappears against the dark UI. Applies to every
+   select; the per-option classes scattered in components become redundant. */
+select {
+  color-scheme: dark;
+}
+select option,
+select optgroup {
+  background-color: #0b0d11;
+  color: rgba(255, 255, 255, 0.85);
+}
+select option:disabled {
+  color: rgba(255, 255, 255, 0.3);
+}
+
 /* Premium input focus glow */
 .input-premium:focus {
   box-shadow: 0 0 0 1px rgba(77, 124, 254, 0.2), 0 0 20px rgba(77, 124, 254, 0.06);
