@@ -245,17 +245,58 @@ async function callVaultToolGuarded(name: string, args: Record<string, any>): Pr
       return `Attention check failed: ${err instanceof Error ? err.message : String(err)}`
     }
   }
-  // save/recall write into (and can implicitly create) a Vault project, so
-  // the project is always the user-configured one — never the model's pick.
+  // save/recall write into (and can implicitly create) a Vault project. The
+  // agent may target any EXISTING project (e.g. engineering notes vs. its
+  // brain); anything unknown falls back to the configured project, so a new
+  // project is never created from a model-invented name.
   if (name === 'vault_memory_save_memory' || name === 'vault_memory_recall_context') {
-    const project = getVaultMemoryProject()
-    if (!project) {
+    const configured = getVaultMemoryProject()
+    const requested = String((args as Record<string, any>).project ?? '').trim()
+    let target = configured
+    if (requested && requested.toLowerCase() !== configured.toLowerCase()) {
+      const existing = await resolveExistingVaultProject(requested)
+      if (existing) {
+        target = existing
+      } else {
+        console.warn(`[VaultMemory] project "${requested}" does not exist — falling back to the configured project.`)
+      }
+    }
+    if (!target) {
       console.warn('[VaultMemory] no project configured, skipping save/recall.')
       return 'No Vault memory project is configured — set one in Settings → Memory & Sync first.'
     }
-    args = { ...args, project }
+    args = { ...args, project: target }
   }
   return vaultMcpManager.callBridgedTool(name, args)
+}
+
+// Existing-project lookup for bridged save/recall, cached briefly so a save
+// burst doesn't hammer vault_list_projects. Names and slugs both resolve to
+// the canonical project name (avoids casing/slug drift creating duplicates).
+let knownVaultProjects: { byKey: Map<string, string>; fetchedAt: number } | null = null
+const VAULT_PROJECTS_CACHE_TTL_MS = 60_000
+
+async function resolveExistingVaultProject(requested: string): Promise<string | null> {
+  const now = Date.now()
+  if (!knownVaultProjects || now - knownVaultProjects.fetchedAt > VAULT_PROJECTS_CACHE_TTL_MS) {
+    try {
+      const raw = await vaultMcpManager.callTool('vault_memory', 'vault_list_projects', {})
+      const parsed = JSON.parse(raw)
+      const pack = parsed?.result ?? parsed
+      const byKey = new Map<string, string>()
+      for (const project of Array.isArray(pack?.projects) ? pack.projects : []) {
+        const name = String(project?.name ?? '').trim()
+        const slug = String(project?.slug ?? '').trim()
+        if (name) byKey.set(name.toLowerCase(), name)
+        if (slug) byKey.set(slug.toLowerCase(), name || slug)
+      }
+      knownVaultProjects = { byKey, fetchedAt: now }
+    } catch (err) {
+      console.warn('[VaultMemory] could not list projects to validate target:', err instanceof Error ? err.message : err)
+      return null
+    }
+  }
+  return knownVaultProjects.byKey.get(requested.toLowerCase()) ?? null
 }
 
 // ── Secure key storage helpers ───────────────────────────────────
@@ -748,7 +789,8 @@ function buildVaultToolGuidance(): string {
     lines.push(
       'vault_memory_* tools talk to The Vault — the user\'s durable cross-session memory shared with their other AI agents.',
       'Use vault_memory_recall_context or vault_memory_find_memory when the user asks about past sessions, projects, decisions, or anything from "the vault". Use vault_memory_save_memory when they explicitly want something kept long-term (distinct from save_memory, which is Aura-local). vault_memory_get_project_briefing gives a project status overview.',
-      'IMPORTANT: search, recall, and graph tools return item summaries and UIDs (vm_...) — NOT full documents. To read the actual content of a memory, ALWAYS follow up with vault_memory_get_memory_detail using the item UID. Chain it without asking: find → detail → answer.'
+      'IMPORTANT: search, recall, and graph tools return item summaries and UIDs (vm_...) — NOT full documents. To read the actual content of a memory, ALWAYS follow up with vault_memory_get_memory_detail using the item UID. Chain it without asking: find → detail → answer.',
+      'PROJECTS: never invent or create Vault projects. Saves and recalls go to the user\'s configured project by default; you may pass a different project ONLY if it already exists in The Vault (check vault_memory_list_projects when unsure). Unknown project names are redirected to the configured project.'
     )
   }
   if ([...names].some((name) => name.startsWith('vault_memory_graphify'))) {
