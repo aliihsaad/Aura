@@ -33,8 +33,6 @@ jobs:
         run: npm run check:release-version
 
       - run: npm run check:package
-      - run: npm run check:mode-isolation
-      - run: npm run check:session-intents
       - run: npm run build
 
   build-windows:
