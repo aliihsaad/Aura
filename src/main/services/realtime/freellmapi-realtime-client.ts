@@ -4,6 +4,7 @@ import {
   RealtimeAudioChunk,
   RealtimeToolResponse,
   createRealtimeAudioInputMessage,
+  usesAudioWireFormat,
   createRealtimeAudioStreamEndMessage,
   createRealtimeToolResponseMessage,
   createRealtimeSetupMessage,
@@ -102,6 +103,9 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
   // Session-context snippet injected into the next connection's instructions.
   // Set when reconnecting after a live drop; cleared once that connection is live.
   private reconnectContext = ''
+  // Model actually serving this connection (mint response wins over the
+  // configured value) — decides the mic audio wire format.
+  private activeModel = ''
 
   constructor(private readonly options: FreeLlmApiRealtimeClientOptions) {
     super()
@@ -138,7 +142,9 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
     if (!isSocketOpen(socket)) return
 
     const data = chunk.toString('base64')
-    socket.send(JSON.stringify(createRealtimeAudioInputMessage(data, 16000)))
+    socket.send(
+      JSON.stringify(createRealtimeAudioInputMessage(data, 16000, usesAudioWireFormat(this.activeModel)))
+    )
   }
 
   endAudioStream(): void {
@@ -257,6 +263,7 @@ export class FreeLlmApiRealtimeClient extends EventEmitter {
 
   private openSocket(session: RealtimeSessionResponse, generation: number): Promise<void> {
     const WebSocketConstructor = getWebSocketConstructor()
+    this.activeModel = cleanValue(session.model) || cleanValue(this.options.model) || 'auto'
 
     return new Promise((resolve, reject) => {
       const socket = new WebSocketConstructor(session.connectUrl)

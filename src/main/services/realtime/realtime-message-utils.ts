@@ -92,16 +92,32 @@ export function createRealtimeSetupMessage(
   return { setup }
 }
 
+/** Gemini 3.1 Flash Live expects mic frames as `realtimeInput.audio`; the
+ * older native-audio models still want `realtimeInput.mediaChunks`. Sending
+ * the wrong shape disconnects the session as soon as the mic starts. */
+export function usesAudioWireFormat(model: string): boolean {
+  return /3\.1-flash-live/i.test(model)
+}
+
 export function createRealtimeAudioInputMessage(
   data: string,
-  sampleRate = 16000
+  sampleRate = 16000,
+  audioWireFormat = false
 ): Record<string, unknown> {
+  const mimeType = `audio/pcm;rate=${sampleRate}`
+  if (audioWireFormat) {
+    return {
+      realtimeInput: {
+        audio: { data, mimeType },
+      },
+    }
+  }
   return {
     realtimeInput: {
       mediaChunks: [
         {
           data,
-          mimeType: `audio/pcm;rate=${sampleRate}`,
+          mimeType,
         },
       ],
     },

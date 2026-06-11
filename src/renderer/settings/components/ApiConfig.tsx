@@ -767,6 +767,29 @@ export default function ApiConfig() {
                 </select>
               </div>
 
+              {companionEngine === 'realtime-beta' && (
+                <div>
+                  <label className="text-[12.5px] text-white/50 block mb-2">Realtime model</label>
+                  <select
+                    value={companionRealtimeModel}
+                    onChange={(e) => setCompanionRealtimeModel(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="auto">Auto — hub picks (2.5 native audio)</option>
+                    <option value="gemini-2.5-flash-native-audio-preview-12-2025">
+                      Gemini 2.5 Flash Native Audio — verified stable
+                    </option>
+                    <option value="gemini-3.1-flash-live-preview">
+                      Gemini 3.1 Flash Live — newest, preview
+                    </option>
+                  </select>
+                  <p className="text-[10px] text-white/25 mt-1.5">
+                    Served through LLM-Hub. 3.1 Flash Live uses a newer audio protocol — Aura switches
+                    the mic format automatically.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="text-[12.5px] text-white/50 block mb-2">Voice model</label>
                 <select
