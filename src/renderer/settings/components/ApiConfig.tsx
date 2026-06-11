@@ -299,8 +299,9 @@ export default function ApiConfig() {
             <div>
               <div className="text-[12.5px] text-white/60">Prefer LLM-Hub for reasoning &amp; vision</div>
               <div className="text-[11px] text-white/30 mt-0.5">
-                Brain, screen analysis, and deep answers try the free relay first and fall back to
-                OpenRouter automatically.
+                Brain, screen analysis, and deep answers go to the hub first, which auto-routes to
+                the best available free model; OpenRouter (your selected model) is the automatic
+                fallback.
                 {relayModels.length > 0 && (
                   <span className="text-emerald-400/50"> {relayModels.length} model(s) routable now.</span>
                 )}

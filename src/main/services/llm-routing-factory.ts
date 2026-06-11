@@ -80,31 +80,24 @@ export function getRelayModels(): RelayModelInfo[] {
 export function buildLlmRouting(
   openRouterApiKey: string,
   model: string,
-  opts?: { vision?: boolean }
+  _opts?: { vision?: boolean }
 ): LlmRoutingConfig {
   const endpoints: LlmRoutingConfig['endpoints'] = []
   const relay = getRelaySource?.()
 
   if (relay?.enabled && relay.baseUrl.trim()) {
-    void maybeRefreshRelayModels()
+    void maybeRefreshRelayModels() // keeps the Settings relay panel fresh
     const baseUrl = normalizeOpenAiBaseUrl(relay.baseUrl, relay.baseUrl)
-    const relayModelId = modelsCache?.baseUrl === baseUrl ? resolveRelayModelId(model) : null
-    const info = relayModelId ? modelsCache!.byId.get(relayModelId) : undefined
-    // Vision: block only when the relay explicitly lists capabilities that
-    // exclude vision. When metadata is absent (current hub deployments omit
-    // it), stay optimistic — a vision-incapable relay model errors and the
-    // OpenRouter fallback catches it.
-    const visionOk =
-      !opts?.vision ||
-      !info ||
-      info.capabilities.length === 0 ||
-      info.capabilities.some((cap) => /vision|image|multimodal/i.test(cap))
-    if (relayModelId && visionOk) {
-      endpoints.push(freeLlmApiEndpoint(baseUrl, relay.apiKey, relayModelId))
-      console.log(
-        `[LLMRouting] ${model} → LLM-Hub first${relayModelId !== model ? ` (as ${relayModelId})` : ''}, OpenRouter fallback.`
-      )
-    }
+    // 'auto' engages the hub's own multi-provider router. Pinning a single
+    // model proved brittle (one overloaded Google provider 502'd the whole
+    // free path); with auto the hub walks its fallback chain itself, and
+    // only a full hub failure drops through to OpenRouter. The hub never
+    // tracks Aura's model selection — it always routes freely.
+    endpoints.push({
+      ...freeLlmApiEndpoint(baseUrl, relay.apiKey, 'auto'),
+      tracksModelSelection: false,
+    })
+    console.log(`[LLMRouting] ${model} → LLM-Hub auto-route first, OpenRouter fallback.`)
   }
 
   if (openRouterApiKey) {

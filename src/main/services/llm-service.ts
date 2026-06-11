@@ -6,7 +6,6 @@ import {
   openRouterEndpoint,
   shouldFallbackAfterStatus,
 } from './llm-routing'
-import { resolveRelayModelId } from './llm-routing-factory'
 import {
   LLMRequest,
   TranscriptEntry,
@@ -84,18 +83,14 @@ export class LLMService extends EventEmitter {
   setModel(model: string): void {
     this.model = model
     this.routing = {
-      endpoints: this.routing.endpoints
-        .map((endpoint) => {
-          if (!endpoint.tracksModelSelection) return endpoint
-          if (endpoint.id === 'freellmapi') {
-            // The relay may serve this model under a native id (or not at
-            // all) — drop the endpoint rather than send an unknown id.
-            const relayModelId = resolveRelayModelId(model)
-            return relayModelId ? { ...endpoint, model: relayModelId } : null
-          }
-          return { ...endpoint, model }
-        })
-        .filter((endpoint): endpoint is LlmEndpoint => endpoint !== null),
+      endpoints: this.routing.endpoints.map((endpoint) =>
+        endpoint.tracksModelSelection
+          ? {
+              ...endpoint,
+              model,
+            }
+          : endpoint
+      ),
     }
   }
 
@@ -316,7 +311,12 @@ export class LLMService extends EventEmitter {
         continue
       }
 
-      if (response.ok) return { response, endpoint }
+      if (response.ok) {
+        // 'auto' on the relay resolves to a concrete model server-side; the
+        // stream parser overwrites this with the model the response reports.
+        this.lastServedBy = { provider: endpoint.label, model: endpoint.model }
+        return { response, endpoint }
+      }
 
       const errorText = await response.text()
       const error = new Error(`${endpoint.label} ${args.purpose} error ${response.status}: ${errorText}`)
@@ -437,7 +437,6 @@ export class LLMService extends EventEmitter {
           body,
         })
         response = served.response
-        this.lastServedBy = { provider: served.endpoint.label, model: served.endpoint.model }
       } else {
         response = await this.requestOpenRouterChatCompletion({
           purpose: 'stream',
@@ -474,6 +473,14 @@ export class LLMService extends EventEmitter {
 
           try {
             const parsed = JSON.parse(data)
+            if (
+              typeof parsed.model === 'string' &&
+              parsed.model &&
+              this.lastServedBy &&
+              this.lastServedBy.model !== parsed.model
+            ) {
+              this.lastServedBy.model = parsed.model
+            }
             const delta = parsed.choices?.[0]?.delta
             const content = delta?.content
             if (content) {
