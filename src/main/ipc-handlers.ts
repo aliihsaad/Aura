@@ -821,6 +821,7 @@ let voiceBargeInOpen = false
 let lastSessionActivityAt = 0
 let proactiveScreenObserverTimer: NodeJS.Timeout | null = null
 let proactiveScreenCaptureInFlight = false
+let lastProactiveTriggerAt = 0
 let previewWindowItems: PreviewWindowItem[] = []
 let workspaceSpeechBubbleId: string | null = null
 let alwaysAllowWorkspaceWritesThisSession = false
@@ -1662,6 +1663,13 @@ const VOICE_PLAYBACK_SUPPRESSION_TAIL_MS = 400
 const MIC_PLAYBACK_BARGE_IN_RMS_THRESHOLD = 0.03
 const MIC_PLAYBACK_BARGE_IN_PEAK_THRESHOLD = 0.12
 const PROACTIVE_SCREEN_CAPTURE_INTERVAL_MS = 45000
+// Minimum gap between screen-change-triggered nudges. The judge only runs
+// when this window has elapsed, so a static or noisy screen never produces a
+// nudge storm and the judge call volume stays low.
+const PROACTIVE_TRIGGER_COOLDOWN_MS = 5 * 60 * 1000
+// Don't trigger off a screen change if the user spoke/typed within this window
+// — they're already engaged, an unprompted nudge would talk over them.
+const PROACTIVE_TRIGGER_USER_ACTIVITY_GUARD_MS = 12000
 const RECALL_QUERY_NOISE_TOKENS = new Set([
   'about',
   'answer',
@@ -2889,6 +2897,7 @@ export function setupIpcHandlers(): void {
       vaultDisabledTools: getVaultDisabledTools(),
       vaultMemoryProject: getVaultMemoryProject(),
       freeLlmRoutingEnabled: configStore.get('freeLlmRoutingEnabled', true) as boolean,
+      proactiveScreenTriggersEnabled: configStore.get('proactiveScreenTriggersEnabled', true) as boolean,
     }
   })
 
@@ -2913,7 +2922,7 @@ export function setupIpcHandlers(): void {
       'brainEnabled', 'brainModel', 'brainVisionModel', 'brainScreenshotIntervalMs',
       'localAi',
       'vaultMemoryEnabled', 'vaultCollabEnabled', 'vaultDisabledTools', 'vaultMemoryProject',
-      'freeLlmRoutingEnabled',
+      'freeLlmRoutingEnabled', 'proactiveScreenTriggersEnabled',
     ])
     for (const [key, value] of Object.entries(config)) {
       if (!ALLOWED_CONFIG_KEYS.has(key)) continue
@@ -4123,8 +4132,59 @@ async function captureProactiveScreenSummary(): Promise<void> {
     'Provide a short factual internal summary of what is currently visible on screen. Mention the main app, current task, and any obvious errors or code editors. Do not invent details and keep it under 120 words.'
   )
 
+  const previousSummary = sessionRuntimeStore.latestScreenSummary
   sessionRuntimeStore.latestScreenSummary = summary.trim().slice(0, 600)
   sessionRuntimeStore.latestScreenSummaryCapturedAt = Date.now()
+
+  // Context-aware trigger: if the screen meaningfully changed since the last
+  // capture, let Aura proactively chime in about the change itself rather than
+  // only on a silence timer. Cheap, gated, and best-effort.
+  await maybeFireScreenChangeTrigger(previousSummary, sessionRuntimeStore.latestScreenSummary, openrouterKey)
+}
+
+/** Judge whether a screen change is worth an unprompted word, and if so wake
+ * the heartbeat with the reason. Best-effort: any failure is swallowed. */
+async function maybeFireScreenChangeTrigger(
+  previousSummary: string,
+  nextSummary: string,
+  openrouterKey: string
+): Promise<void> {
+  if (!(configStore.get('proactiveScreenTriggersEnabled', true) as boolean)) return
+  if (getEffectiveInterruptionPolicy() !== 'proactive') return
+  const prev = previousSummary.trim()
+  const next = nextSummary.trim()
+  if (!prev || !next || prev === next) return
+  // Cooldown gate also keeps judge-call volume low — we only ask the model
+  // when a nudge could actually fire.
+  if (Date.now() - lastProactiveTriggerAt < PROACTIVE_TRIGGER_COOLDOWN_MS) return
+  // Don't talk over an engaged user or interrupt an in-flight answer/voice.
+  if (companionVoiceSpeaking || isAgentTaskBusy()) return
+  if (Date.now() - lastSessionActivityAt < PROACTIVE_TRIGGER_USER_ACTIVITY_GUARD_MS) return
+
+  const model = (configStore.get('brainModel', DEFAULT_BRAIN_CONFIG.brainModel) as string) || DEFAULT_MODEL
+  try {
+    const llm = new LLMService(openrouterKey, model)
+    const raw = await llm.cheapTextCompletion({
+      model,
+      jsonSchemaName: 'screen_change_trigger',
+      systemPrompt:
+        'You decide whether an AI companion should proactively speak because the user\'s screen changed. ' +
+        'Only say yes for changes a helpful peer would actually remark on: a new error or stack trace, a failing test/build, ' +
+        'the user appearing stuck or repeating an action, or switching to a clearly different task. ' +
+        'Say no for routine scrolling, typing, minor UI movement, or ambiguous changes. Be conservative — silence is the safe default. ' +
+        'Respond ONLY with JSON: {"shouldNudge": boolean, "reason": "<short reason, empty if false>"}.',
+      userPrompt: `PREVIOUS screen:\n${prev}\n\nCURRENT screen:\n${next}`,
+    })
+    const verdict = JSON.parse(raw.trim()) as { shouldNudge?: boolean; reason?: string }
+    if (verdict?.shouldNudge && verdict.reason?.trim()) {
+      lastProactiveTriggerAt = Date.now()
+      console.log(`[ProactiveTrigger] screen change → nudge: ${verdict.reason.trim()}`)
+      heartbeatService.setProactiveTriggerReason(verdict.reason.trim())
+      heartbeatService.triggerTick()
+    }
+  } catch (error) {
+    console.warn('[ProactiveTrigger] judge failed:', error instanceof Error ? error.message : error)
+  }
 }
 
 async function maybeRefreshProactiveScreenContext(force = false): Promise<void> {

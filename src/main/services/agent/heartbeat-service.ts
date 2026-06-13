@@ -158,8 +158,24 @@ export class HeartbeatService {
   private proactiveEnabled: boolean = true
   private pendingTriggerTicks: number = 0
   private lastProcessedTranscriptKey: string = ''
+  // One-shot reason for why a screen-change observer woke this tick. Consumed
+  // (and cleared) by the next buildContextSnapshot so the model knows what
+  // changed instead of guessing why it was activated.
+  private proactiveTriggerReason: string = ''
 
   constructor(private readonly deps: HeartbeatDeps) {}
+
+  /** Arm the next tick with the event that prompted it (e.g. a new error
+   * appeared on screen). Cleared once that tick reads it. */
+  setProactiveTriggerReason(reason: string): void {
+    this.proactiveTriggerReason = reason.trim()
+  }
+
+  private consumeProactiveTriggerReason(): string {
+    const reason = this.proactiveTriggerReason
+    this.proactiveTriggerReason = ''
+    return reason
+  }
 
   // The cached id can become stale if the user manually dismisses the bubble
   // via the X button. Sync the cache with the widget manager so callers don't
@@ -755,6 +771,17 @@ export class HeartbeatService {
 
     // Rebuilt every tick, so the agent always knows the real wall-clock time.
     parts.push(`Current date and time: ${formatCurrentDateTime()}`)
+
+    // A screen-change observer woke this tick — tell the model what changed so
+    // it can decide whether the change is worth a proactive word.
+    const triggerReason = this.consumeProactiveTriggerReason()
+    if (triggerReason) {
+      parts.push(
+        '## Proactive Trigger\n' +
+          `Something just changed on the user's screen: ${triggerReason}\n` +
+          'Decide whether this genuinely warrants a brief, helpful word right now. If it does not, stay silent.'
+      )
+    }
 
     if (sessionContext) {
       const behavior = getSessionBehavior(sessionContext.sessionIntent || 'quick-help')

@@ -15,6 +15,7 @@ export default function ApiConfig() {
   const [freeLlmApiKey, setFreeLlmApiKey] = useState('')
   const [freeLlmApiBaseUrl, setFreeLlmApiBaseUrl] = useState(DEFAULT_FREELLMAPI_BASE_URL)
   const [freeLlmRoutingEnabled, setFreeLlmRoutingEnabled] = useState(true)
+  const [proactiveScreenTriggersEnabled, setProactiveScreenTriggersEnabled] = useState(true)
   const [relayModels, setRelayModels] = useState<Array<{ id: string; name?: string; ownedBy?: string }>>([])
   const [companionVoiceModel, setCompanionVoiceModel] = useState('aura-2-thalia-en')
   const [companionEngine, setCompanionEngine] = useState<'classic' | 'realtime-beta'>('classic')
@@ -84,6 +85,7 @@ export default function ApiConfig() {
       setFreeLlmApiKey(config.freeLlmApiKey || '')
       setFreeLlmApiBaseUrl(config.freeLlmApiBaseUrl || DEFAULT_FREELLMAPI_BASE_URL)
       setFreeLlmRoutingEnabled(config.freeLlmRoutingEnabled ?? true)
+      setProactiveScreenTriggersEnabled(config.proactiveScreenTriggersEnabled ?? true)
       try {
         const models = await (window.api as any).getRelayModels?.()
         if (Array.isArray(models)) setRelayModels(models)
@@ -124,6 +126,7 @@ export default function ApiConfig() {
       freeLlmApiKey,
       freeLlmApiBaseUrl,
       freeLlmRoutingEnabled,
+      proactiveScreenTriggersEnabled,
       defaultModel: model,
       codingModel,
       imageGenerationModel,
@@ -671,6 +674,26 @@ export default function ApiConfig() {
               <option value="ask-first" className="bg-[#0a0a0f] text-white/85">Ask first — confirm before acting</option>
               <option value="proactive" className="bg-[#0a0a0f] text-white/85">Proactive — act when confident</option>
             </select>
+          </div>
+
+          {/* Context-aware screen triggers (only meaningful under Proactive policy) */}
+          <div className="border-t border-white/4 pt-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[12.5px] text-white/60">Notice screen changes</div>
+                <div className="text-[11px] text-white/30 mt-0.5">
+                  Under Proactive policy, Aura watches for meaningful screen changes (a new error, a
+                  task switch) and chimes in about them — not just when you go quiet. At most once
+                  every few minutes.
+                </div>
+              </div>
+              <button
+                onClick={() => setProactiveScreenTriggersEnabled((v) => !v)}
+                className="shrink-0 text-white/60 hover:text-white/80 transition-colors"
+              >
+                {proactiveScreenTriggersEnabled ? <ToggleRight size={28} className="text-blue-400" /> : <ToggleLeft size={28} />}
+              </button>
+            </div>
           </div>
 
           {/* Heartbeat Interval */}
