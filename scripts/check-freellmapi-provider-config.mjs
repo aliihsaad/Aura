@@ -133,26 +133,44 @@ assertIncludes(
 
 assertIncludes(
   'src/main/pipelines/companion-pipeline.ts',
-  'new LLMService(d.openrouterApiKey, d.defaultModel)',
-  'Classic Companion pipeline must remain OpenRouter-only.'
+  'buildLlmRouting(d.openrouterApiKey, d.defaultModel)',
+  'Classic Companion pipeline must use settings-controlled LLM-Hub-first routing with OpenRouter fallback.'
 )
 
-assertNotIncludes(
+assertIncludes(
   'src/main/pipelines/companion-pipeline.ts',
-  'llmRouting',
-  'Classic Companion pipeline must not receive FreeLLMAPI routing.'
+  'new LLMService(',
+  'Classic Companion pipeline must initialize its LLM service.'
 )
 
 assertNotIncludes(
   'src/main/ipc-handlers.ts',
   'buildCompanionLlmRouting',
-  'ipc-handlers must not build FreeLLMAPI routing for Classic Companion.'
+  'ipc-handlers must use the shared LLM routing factory, not a separate Companion-only router.'
 )
 
-assertNotIncludes(
+assertIncludes(
   'src/main/services/llm-routing.ts',
-  'freellmapi',
-  'Generic LLM routing must stay OpenRouter-only outside the realtime client.'
+  "export type LlmEndpointId = 'openrouter' | 'freellmapi'",
+  'Generic LLM routing must support OpenRouter plus the LLM-Hub relay endpoint.'
+)
+
+assertIncludes(
+  'src/main/services/llm-routing-factory.ts',
+  "enabled: boolean",
+  'LLM-Hub routing must remain controlled by the Settings toggle.'
+)
+
+assertIncludes(
+  'src/main/ipc-handlers.ts',
+  "freeLlmRoutingEnabled: configStore.get('freeLlmRoutingEnabled', true) as boolean",
+  'ipc-handlers must expose the LLM-Hub reasoning and vision routing toggle.'
+)
+
+assertIncludes(
+  'src/renderer/settings/components/ApiConfig.tsx',
+  'Prefer LLM-Hub for reasoning &amp; vision',
+  'Settings UI must expose the LLM-Hub reasoning and vision toggle.'
 )
 
 assertIncludes(

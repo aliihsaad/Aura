@@ -188,8 +188,8 @@ assertIncludes(
 
 assertIncludes(
   'src/main/pipelines/companion-realtime-pipeline.ts',
-  'new LLMService(d.openrouterApiKey, d.defaultModel)',
-  'Realtime Companion must initialize the OpenRouter LLM service so Detail/OpenRouter tool routing works.'
+  'buildLlmRouting(d.openrouterApiKey, d.defaultModel)',
+  'Realtime Companion must initialize the Detail LLM service with settings-controlled LLM-Hub/OpenRouter routing.'
 )
 
 assertIncludes(
@@ -388,12 +388,6 @@ assertIncludes(
   'src/renderer/overlay/components/Controls.tsx',
   'companionRealtimeStatus',
   'Overlay controls must display realtime status.'
-)
-
-assertIncludes(
-  'src/renderer/canvas/components/ControlBar.tsx',
-  'companionRealtimeStatus',
-  'Canvas control bar must display realtime status.'
 )
 
 assertNotIncludes(

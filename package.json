@@ -19,11 +19,12 @@
     "check:session-report": "node scripts/check-session-report-artifact.mjs",
     "check:companion-turn-boundaries": "node scripts/check-companion-turn-boundaries.mjs",
     "check:detail-dedupe": "node scripts/check-detail-answer-dedupe.mjs",
+    "check:detail-empty-done": "node scripts/check-detail-empty-done-preserves-content.mjs",
     "check:session-brain-dedupe": "node scripts/check-session-brain-screenshot-dedupe.mjs",
     "check:freellmapi-provider": "node scripts/check-freellmapi-provider-config.mjs",
     "check:companion-realtime": "node scripts/check-companion-realtime-pipeline.mjs",
     "check:release-version": "node scripts/check-release-version.mjs",
-    "check:release": "npm run check:release-version && npm run check:package && npm run check:session-brain-cleanup && npm run check:session-report && npm run check:companion-turn-boundaries && npm run check:detail-dedupe && npm run check:session-brain-dedupe && npm run check:freellmapi-provider && npm run check:companion-realtime && npm run build"
+    "check:release": "npm run check:release-version && npm run check:package && npm run check:session-brain-cleanup && npm run check:session-report && npm run check:companion-turn-boundaries && npm run check:detail-dedupe && npm run check:detail-empty-done && npm run check:session-brain-dedupe && npm run check:freellmapi-provider && npm run check:companion-realtime && npm run build"
   },
   "build": {
     "appId": "com.aura.desktop",
